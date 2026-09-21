@@ -23,7 +23,7 @@ Add ` toggle` to the printed path. For example, enter `/home/you/linux-clipboard
 1. Open **Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts**.
 2. Add a shortcut named **Emoji & Clipboard Panel**.
 3. Enter the command chosen above.
-4. Record **Super + .** and save. If the desktop reports a conflict, choose another combination such as **Super + ;**.
+4. Record **Super + .** and save. If another custom shortcut already uses it, edit or remove that binding first.
 
 GNOME's [custom shortcut instructions](https://help.gnome.org/gnome-help/keyboard-shortcuts-set.html) describe the name, command, and key recording fields.
 
@@ -32,7 +32,7 @@ GNOME's [custom shortcut instructions](https://help.gnome.org/gnome-help/keyboar
 1. Open **System Settings → Shortcuts** (under **Keyboard** on some versions).
 2. In Plasma 6, choose **Add New → Command or Script**. In older Plasma releases, look for **Custom Shortcuts**.
 3. Enter the command chosen above and assign **Meta + .**. KDE calls the Windows/Super key **Meta**.
-4. Apply the change. If the combination is already assigned, choose **Meta + ;** or another free combination.
+4. Apply the change. If the combination is already assigned, choose another free combination.
 
 See the [KDE Shortcuts module](https://docs.kde.org/stable_kf6/en/plasma-desktop/kcontrol/keys/) and the [Plasma 6 command shortcut example](https://discuss.kde.org/t/personalized-keyboard-shortcuts-gone-after-update-to-plasma-6-how-to-put-them-back/13126/4).
 
@@ -45,3 +45,25 @@ See the [KDE Shortcuts module](https://docs.kde.org/stable_kf6/en/plasma-desktop
 5. Run `linux-dot-panel quit` when done.
 
 The shortcut command should use the same executable as the terminal commands. If the terminal command works but the shortcut does not, use its absolute path as shown above.
+
+### If Super + . inserts an `e`
+
+IBus may already use **Super + .** and **Super + ;** for emoji input. Check its setting:
+
+```bash
+gsettings get org.freedesktop.ibus.panel.emoji hotkey
+```
+
+To reserve **Super + .** for Dot Panel while keeping IBus emoji input on **Super + ;**, run:
+
+```bash
+gsettings set org.freedesktop.ibus.panel.emoji hotkey "['<Super>semicolon']"
+```
+
+Then check GNOME's **Custom Shortcuts** list for another app assigned to **Super + .**. Edit that existing shortcut to run Dot Panel or remove its binding before adding a new one. You can restore the original IBus shortcuts with:
+
+```bash
+gsettings reset org.freedesktop.ibus.panel.emoji hotkey
+```
+
+IBus defines both combinations in its [emoji shortcut schema](https://github.com/ibus/ibus/blob/main/data/dconf/org.freedesktop.ibus.gschema.xml).
