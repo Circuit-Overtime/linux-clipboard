@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QEvent, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QCursor, QKeySequence, QShortcut
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QCursor, QKeyEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from linux_dot_panel.config import TABS, Settings
+from linux_dot_panel.storage.repositories.emoji_repository import EmojiRepository
+from linux_dot_panel.ui.pages.emoji_page import EmojiPage
 from linux_dot_panel.ui.theme import is_dark, stylesheet
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ PAGE_TEXT = {
 class PopupPanel(QWidget):
     panel_hidden = Signal()
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, emoji_repository: EmojiRepository | None = None) -> None:
         super().__init__()
         self.settings = settings
         self.setWindowTitle("Linux Dot Panel")
@@ -74,6 +76,7 @@ class PopupPanel(QWidget):
         self.search.setObjectName("search")
         self.search.setClearButtonEnabled(True)
         self.search.setAccessibleName("Search current tab")
+        self.search.installEventFilter(self)
         content.addWidget(self.search)
 
         tab_bar = QFrame()
@@ -93,9 +96,22 @@ class PopupPanel(QWidget):
         content.addWidget(tab_bar)
 
         self.pages = QStackedWidget()
+        self.emoji_page = (
+            EmojiPage(emoji_repository, dark=is_dark(settings.theme))
+            if emoji_repository is not None
+            else None
+        )
         for name in TABS:
-            self.pages.addWidget(self._empty_page(name))
+            page = (
+                self.emoji_page if name == "Emoji" and self.emoji_page else self._empty_page(name)
+            )
+            self.pages.addWidget(page)
         content.addWidget(self.pages, 1)
+
+        self.search.textChanged.connect(self._search_changed)
+        self.search.returnPressed.connect(self._select_search_result)
+        if self.emoji_page is not None:
+            self.emoji_page.emoji_selected.connect(self.hide_panel)
 
         hint = QLabel("Ctrl+Tab  Switch tab     Esc  Close")
         hint.setObjectName("hint")
@@ -150,6 +166,8 @@ class PopupPanel(QWidget):
         self.search.setFocus()
 
     def show_panel(self) -> None:
+        if self.emoji_page is not None and self.pages.currentIndex() == 0:
+            self.emoji_page.refresh()
         screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
         if screen is not None:
             area = screen.availableGeometry()
@@ -171,3 +189,25 @@ class PopupPanel(QWidget):
         if event.type() == QEvent.Type.WindowDeactivate and self.isVisible():
             self.hide_panel()
         super().changeEvent(event)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if (
+            watched is self.search
+            and isinstance(event, QKeyEvent)
+            and event.type() == QEvent.Type.KeyPress
+            and event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Up, Qt.Key.Key_Left, Qt.Key.Key_Right)
+            and self.pages.currentIndex() == 0
+            and self.emoji_page is not None
+            and self.emoji_page.model.records
+        ):
+            self.emoji_page.grid.setFocus()
+            return True
+        return super().eventFilter(watched, event)
+
+    def _search_changed(self, text: str) -> None:
+        if self.pages.currentIndex() == 0 and self.emoji_page is not None:
+            self.emoji_page.set_query(text)
+
+    def _select_search_result(self) -> None:
+        if self.pages.currentIndex() == 0 and self.emoji_page is not None:
+            self.emoji_page.select_current_or_first()

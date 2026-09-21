@@ -78,4 +78,34 @@ def stylesheet(dark: bool) -> str:
         background: $selected;
         border: 1px solid $border;
     }
+    QComboBox#emojiCategory, QPushButton#loadMore {
+        color: $text;
+        background: $field;
+        border: 1px solid $border;
+        border-radius: 9px;
+        padding: 6px 10px;
+    }
+    QListView#emojiGrid {
+        background: transparent;
+        border: none;
+        outline: none;
+    }
+    QListView#emojiGrid QScrollBar:vertical {
+        background: transparent;
+        width: 8px;
+        margin: 2px 0;
+    }
+    QListView#emojiGrid QScrollBar::handle:vertical {
+        background: $border;
+        border-radius: 4px;
+        min-height: 20px;
+    }
+    QListView#emojiGrid QScrollBar::add-line:vertical,
+    QListView#emojiGrid QScrollBar::sub-line:vertical {
+        height: 0;
+    }
+    QListView#emojiGrid QScrollBar::add-page:vertical,
+    QListView#emojiGrid QScrollBar::sub-page:vertical {
+        background: transparent;
+    }
     """).substitute(colors)

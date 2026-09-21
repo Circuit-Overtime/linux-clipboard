@@ -5,8 +5,10 @@ from __future__ import annotations
 import sqlite3
 from importlib.resources import files
 
-SCHEMA_VERSION = 1
-REQUIRED_TABLES = frozenset({"metadata", "clipboard_items", "emoji", "emoji_usage", "settings"})
+SCHEMA_VERSION = 2
+REQUIRED_TABLES = frozenset(
+    {"metadata", "clipboard_items", "emoji", "emoji_usage", "settings", "emoji_search"}
+)
 
 
 class UnsupportedSchemaError(RuntimeError):
@@ -26,15 +28,35 @@ def migrate(connection: sqlite3.Connection) -> None:
         except sqlite3.Error:
             connection.rollback()
             raise
-        return
+        version = 1
+    else:
+        row = connection.execute(
+            "SELECT value FROM metadata WHERE key = 'schema_version'"
+        ).fetchone()
+        if row is None:
+            raise UnsupportedSchemaError("Database has no schema version")
+        try:
+            version = int(row[0])
+        except ValueError as error:
+            raise UnsupportedSchemaError("Database schema version is invalid") from error
 
-    row = connection.execute("SELECT value FROM metadata WHERE key = 'schema_version'").fetchone()
-    if row is None:
-        raise UnsupportedSchemaError("Database has no schema version")
-    try:
-        version = int(row[0])
-    except ValueError as error:
-        raise UnsupportedSchemaError("Database schema version is invalid") from error
+    if version == 1:
+        migration = (
+            files("linux_dot_panel.storage")
+            .joinpath("migration_002_emoji_fts.sql")
+            .read_text(encoding="utf-8")
+        )
+        try:
+            connection.executescript(f"BEGIN IMMEDIATE;\n{migration}\nCOMMIT;")
+        except sqlite3.Error:
+            connection.rollback()
+            raise
+        version = 2
+        existing = {
+            row[0]
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+
     if version != SCHEMA_VERSION:
         raise UnsupportedSchemaError(
             f"Database schema version {version} is unsupported; expected {SCHEMA_VERSION}"

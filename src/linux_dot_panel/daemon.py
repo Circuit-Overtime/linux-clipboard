@@ -10,6 +10,7 @@ import sys
 from typing import IO
 
 from linux_dot_panel.config import Settings
+from linux_dot_panel.emoji.importer import ensure_emoji_dataset
 from linux_dot_panel.ipc.protocol import COMMANDS, lock_path
 from linux_dot_panel.logging_setup import configure_logging
 from linux_dot_panel.storage.database import open_database
@@ -44,9 +45,13 @@ def run_daemon() -> int:
         return 0
 
     try:
+        database = None
         try:
             database = open_database()
-        except (OSError, sqlite3.Error, UnsupportedSchemaError) as error:
+            emoji_repository = ensure_emoji_dataset(database)
+        except (OSError, sqlite3.Error, UnsupportedSchemaError, ValueError) as error:
+            if database is not None:
+                database.close()
             LOGGER.error("Could not open database: %s", error)
             print(f"Could not open database: {error}", file=sys.stderr)
             return 1
@@ -61,7 +66,7 @@ def run_daemon() -> int:
             app = QApplication.instance() or QApplication(sys.argv)
             app.setApplicationName("Linux Dot Panel")
             app.setQuitOnLastWindowClosed(False)
-            panel = PopupPanel(settings)
+            panel = PopupPanel(settings, emoji_repository)
 
             def handle(command: str) -> dict[str, object]:
                 if command not in COMMANDS:

@@ -6,7 +6,9 @@ import logging
 import sys
 
 from linux_dot_panel.config import Settings
+from linux_dot_panel.emoji.importer import ensure_emoji_dataset
 from linux_dot_panel.logging_setup import configure_logging
+from linux_dot_panel.storage.database import open_database
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +27,11 @@ def run_demo() -> int:
 
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("Linux Dot Panel")
-    panel = PopupPanel(settings)
-    panel.panel_hidden.connect(app.quit)
-    panel.show_panel()
-    return app.exec()
+    database = open_database()
+    try:
+        panel = PopupPanel(settings, ensure_emoji_dataset(database))
+        panel.panel_hidden.connect(app.quit)
+        panel.show_panel()
+        return app.exec()
+    finally:
+        database.close()

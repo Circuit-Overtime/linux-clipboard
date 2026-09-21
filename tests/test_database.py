@@ -21,7 +21,7 @@ def test_database_uses_xdg_path_and_survives_reopen(tmp_path, monkeypatch):
     SettingsRepository(connection).set("theme", "dark")
     assert (
         connection.execute("SELECT value FROM metadata WHERE key = 'schema_version'").fetchone()[0]
-        == "1"
+        == "2"
     )
     connection.close()
 

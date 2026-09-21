@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from collections.abc import Iterable
 
@@ -80,5 +81,66 @@ class EmojiRepository:
             LIMIT ?
             """,
             (limit,),
+        )
+        return [_emoji(row) for row in rows]
+
+    def list_categories(self) -> list[str]:
+        rows = self.connection.execute(
+            """
+            SELECT category FROM emoji
+            WHERE category IS NOT NULL
+            GROUP BY category
+            ORDER BY MIN(sort_order)
+            """
+        )
+        return [row[0] for row in rows]
+
+    def list_category(
+        self, category: str, *, limit: int = 100, offset: int = 0
+    ) -> list[EmojiRecord]:
+        if limit < 1 or offset < 0:
+            raise ValueError("Invalid pagination")
+        rows = self.connection.execute(
+            """
+            SELECT * FROM emoji WHERE category = ?
+            ORDER BY sort_order LIMIT ? OFFSET ?
+            """,
+            (category, limit, offset),
+        )
+        return [_emoji(row) for row in rows]
+
+    def list_all(self, *, limit: int = 100, offset: int = 0) -> list[EmojiRecord]:
+        if limit < 1 or offset < 0:
+            raise ValueError("Invalid pagination")
+        rows = self.connection.execute(
+            "SELECT * FROM emoji ORDER BY sort_order LIMIT ? OFFSET ?", (limit, offset)
+        )
+        return [_emoji(row) for row in rows]
+
+    def search(
+        self, query: str, *, category: str | None = None, limit: int = 100
+    ) -> list[EmojiRecord]:
+        if limit < 1:
+            raise ValueError("limit must be positive")
+        query = query.strip()
+        if not query:
+            return []
+        exact = self.connection.execute("SELECT * FROM emoji WHERE emoji = ?", (query,)).fetchone()
+        if exact is not None and (category is None or exact["category"] == category):
+            return [_emoji(exact)]
+
+        terms = re.findall(r"\w+", query.casefold())
+        if not terms:
+            return []
+        expression = " AND ".join(f'"{term}"*' for term in terms)
+        rows = self.connection.execute(
+            """
+            SELECT emoji.* FROM emoji_search
+            JOIN emoji ON emoji.id = emoji_search.rowid
+            WHERE emoji_search MATCH ? AND (? IS NULL OR emoji.category = ?)
+            ORDER BY bm25(emoji_search), emoji.sort_order
+            LIMIT ?
+            """,
+            (expression, category, category, limit),
         )
         return [_emoji(row) for row in rows]
