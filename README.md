@@ -17,6 +17,6 @@ linux-dot-panel status
 linux-dot-panel quit
 ```
 
-The desktop shortcut will run `linux-dot-panel toggle`. GNOME or KDE owns that shortcut; the app does not install a global keyboard hook. `toggle` starts the daemon when needed, while `linux-dot-panel daemon` can run it in a foreground terminal for troubleshooting.
+The desktop shortcut runs `linux-dot-panel toggle`. GNOME or KDE owns that shortcut; the app does not install a global keyboard hook. See [keyboard shortcut setup](docs/shortcuts.md) for the GNOME and Plasma steps, including the absolute command path needed for a virtual environment. `toggle` starts the daemon when needed, while `linux-dot-panel daemon` can run it in a foreground terminal for troubleshooting.
 
 Clipboard history will be stored locally. The application will not use a remote service for its core features.
