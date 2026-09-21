@@ -1909,6 +1909,8 @@ Initial packaging:
 Python wheel
 ```
 
+Wayland installs require the `wl-clipboard` system package. Source checkouts provide `scripts/install-system-deps.sh`; wheel users install the system package separately. A future Debian package must declare `Depends: wl-clipboard` so apt installs it automatically.
+
 Then:
 
 ```text

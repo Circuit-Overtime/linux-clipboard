@@ -22,7 +22,7 @@ class WaylandClipboardBackend(QObject):
     def start(self) -> bool:
         executable = shutil.which("wl-paste")
         if executable is None:
-            LOGGER.warning("Clipboard monitoring needs wl-clipboard on Wayland")
+            LOGGER.warning("Wayland clipboard monitoring needs the wl-clipboard system package")
             return False
         self.process.start(
             executable,

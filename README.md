@@ -9,6 +9,7 @@ Selecting an emoji keeps the panel open. When PyGObject and the AT-SPI typelib a
 ## Development
 
 ```bash
+sh scripts/install-system-deps.sh  # Wayland system dependency
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[dev]'
@@ -23,7 +24,7 @@ The desktop shortcut runs `linux-dot-panel toggle`. GNOME or KDE owns that short
 
 Clipboard history will be stored locally. The application will not use a remote service for its core features.
 
-Clipboard monitoring is event driven. On Wayland, install `wl-clipboard` so the daemon can run `wl-paste --watch`; when it is unavailable, Qt clipboard notifications provide a partial fallback. On X11, Qt clipboard notifications are used directly. The watcher stores text up to 1 MiB, merges duplicates, respects the configured history limit, and skips content marked sensitive by the source. The Clipboard tab will display these stored items in the next milestone.
+Clipboard monitoring is event driven. On Wayland, a source checkout can run `sh scripts/install-system-deps.sh` to install the required `wl-clipboard` system package with apt, dnf, or pacman; the daemon then runs `wl-paste --watch`. For a wheel install, install `wl-clipboard` with the system package manager separately because pip cannot install OS packages. If `wl-paste` is unavailable, Qt clipboard notifications provide a partial fallback. On X11, Qt clipboard notifications are used directly. The watcher stores text up to 1 MiB, merges duplicates, respects the configured history limit, and skips content marked sensitive by the source. The Clipboard tab will display these stored items in the next milestone.
 
 The daemon creates its SQLite database at `$XDG_DATA_HOME/linux-dot-panel/panel.db` (or `~/.local/share/linux-dot-panel/panel.db`). Its schema is versioned; an unsupported or incomplete existing database causes an error instead of being replaced. UI preferences currently remain in the XDG config file.
 
