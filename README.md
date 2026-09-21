@@ -2,7 +2,7 @@
 
 A small Linux emoji and clipboard panel for GNOME and KDE Plasma. The panel uses a macOS-inspired visual style and follows the keyboard-first flow of the Windows emoji and clipboard panel.
 
-The project is being built in the order described in [the implementation plan](linux-emoji-clipboard-panel-plan.md). The popup, single-instance daemon, offline emoji picker, and text clipboard history are available. Kaomoji and Symbols are upcoming steps.
+The project is being built in the order described in [the implementation plan](linux-emoji-clipboard-panel-plan.md). The popup, single-instance daemon, offline Emoji, Kaomoji, and Symbols pickers, and text clipboard history are available.
 
 Selecting an emoji keeps the panel open. When PyGObject and the AT-SPI typelib are available, the panel inserts the emoji into the text field that was focused when it opened. Apps that do not expose an editable accessibility field fall back to copying the emoji; the panel shows a paste hint. On Ubuntu, `python3-gi` and `gir1.2-atspi-2.0` provide the system components. The Python environment running the daemon must also be able to import `gi` (for example, a venv created with `--system-site-packages`, or the optional `insert` dependency). Restart the daemon after changing its Python environment.
 
@@ -31,3 +31,5 @@ The Clipboard tab shows paged previews. Search filters saved text; select a card
 The daemon creates its SQLite database at `$XDG_DATA_HOME/linux-dot-panel/panel.db` (or `~/.local/share/linux-dot-panel/panel.db`). Its schema is versioned; an unsupported or incomplete existing database causes an error instead of being replaced. UI preferences currently remain in the XDG config file.
 
 The Emoji tab searches names and English keywords, browses categories, and keeps a recent list. Click an emoji or select it with Enter to insert it at the previous text cursor when supported, or copy it for manual pasting. The panel stays open for repeated selections. The bundled data is generated from [Unicode Emoji 18.0](https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt) and [Unicode CLDR English annotations](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-annotations-full/annotations/en/annotations.json). The data is distributed under the [Unicode License v3](src/linux_dot_panel/resources/UNICODE-LICENSE.txt); emoji search works offline.
+
+The Kaomoji and Symbols tabs also work offline. Browse their categories or search by name, keyword, or character. Click a result or select it with Enter to insert it at the previous text cursor when supported. Otherwise, the selection is copied and the panel shows a paste hint. The panel stays open for repeated selections.

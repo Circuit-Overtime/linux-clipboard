@@ -25,6 +25,7 @@ from linux_dot_panel.storage.repositories.clipboard_repository import ClipboardR
 from linux_dot_panel.storage.repositories.emoji_repository import EmojiRepository
 from linux_dot_panel.ui.pages.clipboard_page import ClipboardPage
 from linux_dot_panel.ui.pages.emoji_page import EmojiPage
+from linux_dot_panel.ui.pages.text_picker_page import TextPickerPage
 from linux_dot_panel.ui.theme import is_dark, stylesheet
 
 LOGGER = logging.getLogger(__name__)
@@ -115,11 +116,17 @@ class PopupPanel(QWidget):
             if clipboard_repository is not None
             else None
         )
+        self.kaomoji_page = TextPickerPage("Kaomoji", dark=is_dark(settings.theme))
+        self.symbols_page = TextPickerPage("Symbols", dark=is_dark(settings.theme))
         for name in TABS:
             if name == "Emoji" and self.emoji_page is not None:
                 page = self.emoji_page
             elif name == "Clipboard" and self.clipboard_page is not None:
                 page = self.clipboard_page
+            elif name == "Kaomoji":
+                page = self.kaomoji_page
+            elif name == "Symbols":
+                page = self.symbols_page
             else:
                 page = self._empty_page(name)
             self.pages.addWidget(page)
@@ -128,9 +135,11 @@ class PopupPanel(QWidget):
         self.search.textChanged.connect(self._search_changed)
         self.search.returnPressed.connect(self._select_search_result)
         if self.emoji_page is not None:
-            self.emoji_page.emoji_selected.connect(self._insert_emoji)
+            self.emoji_page.emoji_selected.connect(self._insert_text)
         if self.clipboard_page is not None:
             self.clipboard_page.copied.connect(self.hide_panel)
+        self.kaomoji_page.text_selected.connect(self._insert_text)
+        self.symbols_page.text_selected.connect(self._insert_text)
 
         self.hint = QLabel("Ctrl+Tab  Switch tab     Esc  Close")
         self.hint.setObjectName("hint")
@@ -222,25 +231,19 @@ class PopupPanel(QWidget):
             and isinstance(event, QKeyEvent)
             and event.type() == QEvent.Type.KeyPress
             and event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Up)
-            and (
-                (
-                    self.pages.currentIndex() == 0
-                    and self.emoji_page is not None
-                    and self.emoji_page.model.records
-                )
-                or (
-                    self.pages.currentIndex() == 1
-                    and self.clipboard_page is not None
-                    and self.clipboard_page.model.records
-                )
-            )
         ):
-            if self.pages.currentIndex() == 0:
-                self.emoji_page.grid.setFocus()
-            else:
-                self.clipboard_page.list.setCurrentIndex(self.clipboard_page.model.index(0, 0))
-                self.clipboard_page.list.setFocus()
-            return True
+            view = None
+            page = self.pages.currentWidget()
+            if isinstance(page, EmojiPage) and page.model.records:
+                view = page.grid
+            elif isinstance(page, ClipboardPage) and page.model.records:
+                view = page.list
+            elif isinstance(page, TextPickerPage) and page.model.records:
+                view = page.view
+            if view is not None:
+                view.setCurrentIndex(view.model().index(0, 0))
+                view.setFocus()
+                return True
         return super().eventFilter(watched, event)
 
     def _search_changed(self, text: str) -> None:
@@ -248,16 +251,24 @@ class PopupPanel(QWidget):
             self.emoji_page.set_query(text)
         elif self.pages.currentIndex() == 1 and self.clipboard_page is not None:
             self.clipboard_page.set_query(text)
+        elif self.pages.currentIndex() == 2:
+            self.kaomoji_page.set_query(text)
+        elif self.pages.currentIndex() == 3:
+            self.symbols_page.set_query(text)
 
     def _select_search_result(self) -> None:
         if self.pages.currentIndex() == 0 and self.emoji_page is not None:
             self.emoji_page.select_current_or_first()
         elif self.pages.currentIndex() == 1 and self.clipboard_page is not None:
             self.clipboard_page.select_current_or_first()
+        elif self.pages.currentIndex() == 2:
+            self.kaomoji_page.select_current_or_first()
+        elif self.pages.currentIndex() == 3:
+            self.symbols_page.select_current_or_first()
 
-    def _insert_emoji(self, emoji: str) -> None:
-        if self.inserter.insert(emoji):
+    def _insert_text(self, value: str) -> None:
+        if self.inserter.insert(value):
             self.hint.setText("Inserted at the previous cursor position")
         else:
-            QApplication.clipboard().setText(emoji)
+            QApplication.clipboard().setText(value)
             self.hint.setText("Copied — paste with Ctrl+V")

@@ -84,7 +84,7 @@ def stylesheet(dark: bool) -> str:
         background: $selected;
         border: 1px solid $border;
     }
-    QComboBox#emojiCategory {
+    QComboBox#categoryPicker {
         color: $text;
         background: $field;
         border: 1px solid $border;
@@ -93,19 +93,19 @@ def stylesheet(dark: bool) -> str:
         padding: 8px 30px 8px 12px;
         font-size: 13px;
     }
-    QComboBox#emojiCategory:hover, QComboBox#emojiCategory:focus {
+    QComboBox#categoryPicker:hover, QComboBox#categoryPicker:focus {
         border-color: $accent;
     }
-    QComboBox#emojiCategory::drop-down {
+    QComboBox#categoryPicker::drop-down {
         width: 28px;
         border: none;
     }
-    QComboBox#emojiCategory::down-arrow {
+    QComboBox#categoryPicker::down-arrow {
         image: none;
         width: 0;
         height: 0;
     }
-    QListView#emojiCategoryMenu {
+    QListView#categoryMenu {
         color: $text;
         background: $surface;
         border: 1px solid $border;
@@ -115,15 +115,15 @@ def stylesheet(dark: bool) -> str:
         selection-background-color: $menu_selected;
         selection-color: $text;
     }
-    QListView#emojiCategoryMenu::item {
+    QListView#categoryMenu::item {
         min-height: 29px;
         padding: 3px 10px;
         border-radius: 7px;
     }
-    QListView#emojiCategoryMenu::item:hover {
+    QListView#categoryMenu::item:hover {
         background: $menu_hover;
     }
-    QListView#emojiCategoryMenu::item:selected {
+    QListView#categoryMenu::item:selected {
         background: $menu_selected;
         color: $text;
     }
@@ -157,7 +157,7 @@ def stylesheet(dark: bool) -> str:
     QListView#emojiGrid QScrollBar::sub-page:vertical {
         background: transparent;
     }
-    QLabel#clipboardHeading {
+    QLabel#clipboardHeading, QLabel#textPickerHeading {
         color: $text;
         font-size: 14px;
         font-weight: 600;
@@ -183,6 +183,29 @@ def stylesheet(dark: bool) -> str:
     }
     QListView#clipboardList QScrollBar::add-page:vertical,
     QListView#clipboardList QScrollBar::sub-page:vertical {
+        background: transparent;
+    }
+    QListView#textPickerList {
+        background: transparent;
+        border: none;
+        outline: none;
+    }
+    QListView#textPickerList QScrollBar:vertical {
+        background: transparent;
+        width: 8px;
+        margin: 2px 0;
+    }
+    QListView#textPickerList QScrollBar::handle:vertical {
+        background: $border;
+        border-radius: 4px;
+        min-height: 20px;
+    }
+    QListView#textPickerList QScrollBar::add-line:vertical,
+    QListView#textPickerList QScrollBar::sub-line:vertical {
+        height: 0;
+    }
+    QListView#textPickerList QScrollBar::add-page:vertical,
+    QListView#textPickerList QScrollBar::sub-page:vertical {
         background: transparent;
     }
     QPushButton#clipboardCopy,
