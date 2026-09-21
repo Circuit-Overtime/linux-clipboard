@@ -7,7 +7,6 @@ import time
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter
 from PySide6.QtWidgets import (
-    QApplication,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -98,7 +97,7 @@ class EmojiGrid(QListView):
 
 
 class EmojiPage(QWidget):
-    emoji_selected = Signal()
+    emoji_selected = Signal(str)
 
     def __init__(self, repository: EmojiRepository, *, dark: bool) -> None:
         super().__init__()
@@ -191,6 +190,5 @@ class EmojiPage(QWidget):
         if not index.isValid():
             return
         record = self.model.records[index.row()]
-        QApplication.clipboard().setText(record.emoji)
         self.repository.record_usage(record.id, timestamp=int(time.time()))
-        self.emoji_selected.emit()
+        self.emoji_selected.emit(record.emoji)

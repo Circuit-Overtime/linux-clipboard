@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from linux_dot_panel.config import TABS, Settings
+from linux_dot_panel.insertion import TextInserter
 from linux_dot_panel.storage.repositories.emoji_repository import EmojiRepository
 from linux_dot_panel.ui.pages.emoji_page import EmojiPage
 from linux_dot_panel.ui.theme import is_dark, stylesheet
@@ -41,6 +42,7 @@ class PopupPanel(QWidget):
     def __init__(self, settings: Settings, emoji_repository: EmojiRepository | None = None) -> None:
         super().__init__()
         self.settings = settings
+        self.inserter = TextInserter()
         self.setWindowTitle("Linux Dot Panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -111,12 +113,12 @@ class PopupPanel(QWidget):
         self.search.textChanged.connect(self._search_changed)
         self.search.returnPressed.connect(self._select_search_result)
         if self.emoji_page is not None:
-            self.emoji_page.emoji_selected.connect(self.hide_panel)
+            self.emoji_page.emoji_selected.connect(self._insert_emoji)
 
-        hint = QLabel("Ctrl+Tab  Switch tab     Esc  Close")
-        hint.setObjectName("hint")
-        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        content.addWidget(hint)
+        self.hint = QLabel("Ctrl+Tab  Switch tab     Esc  Close")
+        self.hint.setObjectName("hint")
+        self.hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        content.addWidget(self.hint)
 
         next_tab = QShortcut(QKeySequence("Ctrl+Tab"), self)
         next_tab.activated.connect(
@@ -166,6 +168,9 @@ class PopupPanel(QWidget):
         self.search.setFocus()
 
     def show_panel(self) -> None:
+        if not self.isVisible():
+            self.inserter.capture_focused_field()
+        self.hint.setText("Ctrl+Tab  Switch tab     Esc  Close")
         if self.emoji_page is not None and self.pages.currentIndex() == 0:
             self.emoji_page.refresh()
         screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
@@ -211,3 +216,10 @@ class PopupPanel(QWidget):
     def _select_search_result(self) -> None:
         if self.pages.currentIndex() == 0 and self.emoji_page is not None:
             self.emoji_page.select_current_or_first()
+
+    def _insert_emoji(self, emoji: str) -> None:
+        if self.inserter.insert(emoji):
+            self.hint.setText("Inserted at the previous cursor position")
+        else:
+            QApplication.clipboard().setText(emoji)
+            self.hint.setText("Copied — paste with Ctrl+V")

@@ -1038,20 +1038,16 @@ When selected:
 ```text
 emoji
   ↓
-QClipboard.setText()
-  ↓
 update usage stats
   ↓
-hide panel
+try AT-SPI insertion into the text field focused before opening
+  ├── supported → insert at caret
+  └── unavailable → copy to clipboard and show paste hint
+  ↓
+keep panel open for another selection
 ```
 
-V1 behaviour should be:
-
-```text
-select → copy
-```
-
-Do not depend on synthetic keystrokes.
+Do not depend on synthetic keystrokes. Direct insertion is optional when the target app exposes an editable accessibility field.
 
 ---
 
@@ -1786,7 +1782,7 @@ Done when:
 Search: rocket
 ```
 
-shows relevant emoji and selecting one copies it to the clipboard.
+shows relevant emoji and selecting one inserts it into a supported text field or copies it as a fallback, while keeping the panel open.
 
 ---
 
