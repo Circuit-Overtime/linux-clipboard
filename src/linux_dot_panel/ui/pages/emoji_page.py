@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter
+from PySide6.QtCore import QAbstractListModel, QModelIndex, QPoint, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from linux_dot_panel.emoji.models import EmojiRecord
 from linux_dot_panel.storage.repositories.emoji_repository import EmojiRepository
 
-PAGE_SIZE = 100
+PAGE_SIZE = 200
 
 
 class EmojiListModel(QAbstractListModel):
@@ -96,6 +96,22 @@ class EmojiGrid(QListView):
         super().keyPressEvent(event)
 
 
+class CategoryComboBox(QComboBox):
+    def __init__(self, *, dark: bool) -> None:
+        super().__init__()
+        self.dark = dark
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(QColor("#b7bac4" if self.dark else "#6e7582"), 1.8))
+        center_x = self.width() - 18
+        center_y = self.height() // 2
+        painter.drawLine(QPoint(center_x - 4, center_y - 2), QPoint(center_x, center_y + 2))
+        painter.drawLine(QPoint(center_x, center_y + 2), QPoint(center_x + 4, center_y - 2))
+
+
 class EmojiPage(QWidget):
     emoji_selected = Signal(str)
 
@@ -109,9 +125,14 @@ class EmojiPage(QWidget):
 
         heading = QHBoxLayout()
         heading.addWidget(QLabel("Browse"))
-        self.category = QComboBox()
+        self.category = CategoryComboBox(dark=dark)
         self.category.setObjectName("emojiCategory")
         self.category.setAccessibleName("Emoji category")
+        menu = QListView()
+        menu.setObjectName("emojiCategoryMenu")
+        menu.setUniformItemSizes(True)
+        menu.setSpacing(2)
+        self.category.setView(menu)
         self.category.addItems(["All", "Recent", *repository.list_categories()])
         self.category.currentTextChanged.connect(self.refresh)
         heading.addWidget(self.category)

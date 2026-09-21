@@ -26,6 +26,8 @@ def stylesheet(dark: bool) -> str:
             "text": "#f4f4f6",
             "muted": "#a6a9b2",
             "accent": "#87adff",
+            "menu_hover": "#3c3f49",
+            "menu_selected": "#405476",
         }
         if dark
         else {
@@ -37,6 +39,8 @@ def stylesheet(dark: bool) -> str:
             "text": "#20232b",
             "muted": "#727782",
             "accent": "#336dca",
+            "menu_hover": "#f0f2f7",
+            "menu_selected": "#e5edfb",
         }
     )
     return Template("""
@@ -78,7 +82,50 @@ def stylesheet(dark: bool) -> str:
         background: $selected;
         border: 1px solid $border;
     }
-    QComboBox#emojiCategory, QPushButton#loadMore {
+    QComboBox#emojiCategory {
+        color: $text;
+        background: $field;
+        border: 1px solid $border;
+        border-radius: 11px;
+        min-width: 168px;
+        padding: 8px 30px 8px 12px;
+        font-size: 13px;
+    }
+    QComboBox#emojiCategory:hover, QComboBox#emojiCategory:focus {
+        border-color: $accent;
+    }
+    QComboBox#emojiCategory::drop-down {
+        width: 28px;
+        border: none;
+    }
+    QComboBox#emojiCategory::down-arrow {
+        image: none;
+        width: 0;
+        height: 0;
+    }
+    QListView#emojiCategoryMenu {
+        color: $text;
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: 11px;
+        padding: 5px;
+        outline: none;
+        selection-background-color: $menu_selected;
+        selection-color: $text;
+    }
+    QListView#emojiCategoryMenu::item {
+        min-height: 29px;
+        padding: 3px 10px;
+        border-radius: 7px;
+    }
+    QListView#emojiCategoryMenu::item:hover {
+        background: $menu_hover;
+    }
+    QListView#emojiCategoryMenu::item:selected {
+        background: $menu_selected;
+        color: $text;
+    }
+    QPushButton#loadMore {
         color: $text;
         background: $field;
         border: 1px solid $border;
