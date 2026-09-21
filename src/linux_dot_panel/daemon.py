@@ -72,10 +72,9 @@ def run_daemon() -> int:
             app = QApplication.instance() or QApplication(sys.argv)
             app.setApplicationName("Linux Dot Panel")
             app.setQuitOnLastWindowClosed(False)
-            panel = PopupPanel(settings, emoji_repository)
-            capture = ClipboardCapture(
-                ClipboardRepository(database), history_limit=settings.history_limit
-            )
+            clipboard_repository = ClipboardRepository(database)
+            panel = PopupPanel(settings, emoji_repository, clipboard_repository)
+            capture = ClipboardCapture(clipboard_repository, history_limit=settings.history_limit)
 
             def handle(command: str) -> dict[str, object]:
                 if command not in COMMANDS:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from linux_dot_panel.clipboard.models import ClipboardItem
+from linux_dot_panel.clipboard.models import ClipboardItem, ClipboardPreview
 
 
 def _item(row: sqlite3.Row) -> ClipboardItem:
@@ -79,6 +79,33 @@ class ClipboardRepository:
             (limit, offset),
         )
         return [_item(row) for row in rows]
+
+    def list_previews(
+        self, *, query: str = "", limit: int = 30, offset: int = 0
+    ) -> list[ClipboardPreview]:
+        if limit < 1 or offset < 0:
+            raise ValueError("Invalid pagination")
+        rows = self.connection.execute(
+            """
+            SELECT id, substr(text_content, 1, 240) AS preview,
+                   length(text_content) AS char_count, use_count, is_pinned
+            FROM clipboard_items
+            WHERE ? = '' OR instr(lower(text_content), lower(?)) > 0
+            ORDER BY is_pinned DESC, last_used_at DESC, id DESC
+            LIMIT ? OFFSET ?
+            """,
+            (query, query, limit, offset),
+        )
+        return [
+            ClipboardPreview(
+                id=row["id"],
+                preview=row["preview"],
+                char_count=row["char_count"],
+                use_count=row["use_count"],
+                is_pinned=bool(row["is_pinned"]),
+            )
+            for row in rows
+        ]
 
     def set_pinned(self, item_id: int, pinned: bool) -> bool:
         with self.connection:

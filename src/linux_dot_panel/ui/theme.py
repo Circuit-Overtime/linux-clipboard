@@ -28,6 +28,7 @@ def stylesheet(dark: bool) -> str:
             "accent": "#87adff",
             "menu_hover": "#3c3f49",
             "menu_selected": "#405476",
+            "button_text": "#20232b",
         }
         if dark
         else {
@@ -41,6 +42,7 @@ def stylesheet(dark: bool) -> str:
             "accent": "#336dca",
             "menu_hover": "#f0f2f7",
             "menu_selected": "#e5edfb",
+            "button_text": "#ffffff",
         }
     )
     return Template("""
@@ -154,5 +156,62 @@ def stylesheet(dark: bool) -> str:
     QListView#emojiGrid QScrollBar::add-page:vertical,
     QListView#emojiGrid QScrollBar::sub-page:vertical {
         background: transparent;
+    }
+    QLabel#clipboardHeading {
+        color: $text;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    QListView#clipboardList {
+        background: transparent;
+        border: none;
+        outline: none;
+    }
+    QListView#clipboardList QScrollBar:vertical {
+        background: transparent;
+        width: 8px;
+        margin: 2px 0;
+    }
+    QListView#clipboardList QScrollBar::handle:vertical {
+        background: $border;
+        border-radius: 4px;
+        min-height: 20px;
+    }
+    QListView#clipboardList QScrollBar::add-line:vertical,
+    QListView#clipboardList QScrollBar::sub-line:vertical {
+        height: 0;
+    }
+    QListView#clipboardList QScrollBar::add-page:vertical,
+    QListView#clipboardList QScrollBar::sub-page:vertical {
+        background: transparent;
+    }
+    QPushButton#clipboardCopy,
+    QPushButton#clipboardPin,
+    QPushButton#clipboardDelete,
+    QPushButton#clipboardMore {
+        background: $field;
+        color: $text;
+        border: 1px solid $border;
+        border-radius: 9px;
+        padding: 7px 10px;
+    }
+    QPushButton#clipboardCopy {
+        background: $accent;
+        color: $button_text;
+        border-color: $accent;
+    }
+    QPushButton#clipboardClear {
+        background: transparent;
+        color: $muted;
+        border: none;
+        padding: 5px 7px;
+    }
+    QPushButton#clipboardClear:hover { color: $text; }
+    QPushButton#clipboardCopy:disabled,
+    QPushButton#clipboardPin:disabled,
+    QPushButton#clipboardDelete:disabled {
+        color: $muted;
+        background: $segment;
+        border-color: $border;
     }
     """).substitute(colors)
