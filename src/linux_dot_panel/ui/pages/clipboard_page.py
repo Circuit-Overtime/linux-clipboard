@@ -199,6 +199,10 @@ class ClipboardPage(QWidget):
         layout.addWidget(self.more)
         self.refresh()
 
+    def set_dark(self, dark: bool) -> None:
+        self.list.itemDelegate().dark = dark
+        self.list.viewport().update()
+
     def set_query(self, text: str) -> None:
         self.query = text.strip()
         self.refresh()

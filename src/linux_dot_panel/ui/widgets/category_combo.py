@@ -18,6 +18,10 @@ class CategoryComboBox(QComboBox):
         menu.setSpacing(2)
         self.setView(menu)
 
+    def set_dark(self, dark: bool) -> None:
+        self.dark = dark
+        self.update()
+
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
         painter = QPainter(self)

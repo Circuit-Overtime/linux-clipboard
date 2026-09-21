@@ -26,6 +26,7 @@ def stylesheet(dark: bool) -> str:
             "text": "#f4f4f6",
             "muted": "#a6a9b2",
             "accent": "#87adff",
+            "accent_hover": "#a4c1ff",
             "menu_hover": "#3c3f49",
             "menu_selected": "#405476",
             "button_text": "#20232b",
@@ -40,6 +41,7 @@ def stylesheet(dark: bool) -> str:
             "text": "#20232b",
             "muted": "#727782",
             "accent": "#336dca",
+            "accent_hover": "#285cac",
             "menu_hover": "#f0f2f7",
             "menu_selected": "#e5edfb",
             "button_text": "#ffffff",
@@ -72,13 +74,14 @@ def stylesheet(dark: bool) -> str:
     QPushButton[tabButton="true"] {
         color: $muted;
         background: transparent;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 9px;
         padding: 9px 11px;
         font-size: 13px;
         font-weight: 550;
     }
     QPushButton[tabButton="true"]:hover { color: $text; }
+    QPushButton[tabButton="true"]:focus { border-color: $accent; }
     QPushButton[tabButton="true"][active="true"] {
         color: $text;
         background: $selected;
@@ -134,6 +137,15 @@ def stylesheet(dark: bool) -> str:
         border-radius: 9px;
         padding: 6px 10px;
     }
+    QPushButton#loadMore:hover,
+    QPushButton#clipboardPin:hover,
+    QPushButton#clipboardDelete:hover,
+    QPushButton#clipboardMore:hover { background: $menu_hover; }
+    QPushButton#loadMore:focus,
+    QPushButton#clipboardCopy:focus,
+    QPushButton#clipboardPin:focus,
+    QPushButton#clipboardDelete:focus,
+    QPushButton#clipboardMore:focus { border-color: $accent; }
     QListView#emojiGrid {
         background: transparent;
         border: none;
@@ -157,7 +169,7 @@ def stylesheet(dark: bool) -> str:
     QListView#emojiGrid QScrollBar::sub-page:vertical {
         background: transparent;
     }
-    QLabel#clipboardHeading, QLabel#textPickerHeading {
+    QLabel#emojiHeading, QLabel#clipboardHeading, QLabel#textPickerHeading {
         color: $text;
         font-size: 14px;
         font-weight: 600;
@@ -223,13 +235,15 @@ def stylesheet(dark: bool) -> str:
         color: $button_text;
         border-color: $accent;
     }
+    QPushButton#clipboardCopy:hover { background: $accent_hover; }
     QPushButton#clipboardClear {
         background: transparent;
         color: $muted;
-        border: none;
+        border: 1px solid transparent;
         padding: 5px 7px;
     }
     QPushButton#clipboardClear:hover { color: $text; }
+    QPushButton#clipboardClear:focus { border-color: $accent; }
     QPushButton#clipboardCopy:disabled,
     QPushButton#clipboardPin:disabled,
     QPushButton#clipboardDelete:disabled {

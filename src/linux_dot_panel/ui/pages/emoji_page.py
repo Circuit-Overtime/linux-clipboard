@@ -108,7 +108,10 @@ class EmojiPage(QWidget):
         layout.setSpacing(10)
 
         heading = QHBoxLayout()
-        heading.addWidget(QLabel("Browse"))
+        title = QLabel("Browse")
+        title.setObjectName("emojiHeading")
+        heading.addWidget(title)
+        heading.addStretch()
         self.category = CategoryComboBox(dark=dark)
         self.category.setAccessibleName("Emoji category")
         self.category.addItems(["All", "Recent", *repository.list_categories()])
@@ -144,6 +147,11 @@ class EmojiPage(QWidget):
         self.more.clicked.connect(self.load_more)
         layout.addWidget(self.more)
         self.refresh()
+
+    def set_dark(self, dark: bool) -> None:
+        self.category.set_dark(dark)
+        self.grid.itemDelegate().dark = dark
+        self.grid.viewport().update()
 
     def set_query(self, text: str) -> None:
         self.query = text.strip()

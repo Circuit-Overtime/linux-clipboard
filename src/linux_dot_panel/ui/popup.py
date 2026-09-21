@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QCursor, QKeyEvent, QKeySequence, QShortcut
+from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPropertyAnimation, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QCursor, QKeyEvent, QKeySequence, QPalette, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -51,6 +52,7 @@ class PopupPanel(QWidget):
         super().__init__()
         self.settings = settings
         self.inserter = TextInserter()
+        self._dark = is_dark(settings.theme)
         self.setWindowTitle("Linux Dot Panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -60,7 +62,7 @@ class PopupPanel(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMinimumSize(480, 480)
         self.resize(540, 560)
-        self.setStyleSheet(stylesheet(is_dark(settings.theme)))
+        self.setStyleSheet(stylesheet(self._dark))
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(16, 16, 16, 16)
@@ -107,17 +109,15 @@ class PopupPanel(QWidget):
 
         self.pages = QStackedWidget()
         self.emoji_page = (
-            EmojiPage(emoji_repository, dark=is_dark(settings.theme))
-            if emoji_repository is not None
-            else None
+            EmojiPage(emoji_repository, dark=self._dark) if emoji_repository is not None else None
         )
         self.clipboard_page = (
-            ClipboardPage(clipboard_repository, dark=is_dark(settings.theme))
+            ClipboardPage(clipboard_repository, dark=self._dark)
             if clipboard_repository is not None
             else None
         )
-        self.kaomoji_page = TextPickerPage("Kaomoji", dark=is_dark(settings.theme))
-        self.symbols_page = TextPickerPage("Symbols", dark=is_dark(settings.theme))
+        self.kaomoji_page = TextPickerPage("Kaomoji", dark=self._dark)
+        self.symbols_page = TextPickerPage("Symbols", dark=self._dark)
         for name in TABS:
             if name == "Emoji" and self.emoji_page is not None:
                 page = self.emoji_page
@@ -145,6 +145,11 @@ class PopupPanel(QWidget):
         self.hint.setObjectName("hint")
         self.hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         content.addWidget(self.hint)
+        hint_opacity = QGraphicsOpacityEffect(self.hint)
+        self.hint.setGraphicsEffect(hint_opacity)
+        self.hint_animation = QPropertyAnimation(hint_opacity, b"opacity", self)
+        self.hint_animation.setDuration(180)
+        self.hint_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         next_tab = QShortcut(QKeySequence("Ctrl+Tab"), self)
         next_tab.activated.connect(
@@ -158,6 +163,21 @@ class PopupPanel(QWidget):
         close.activated.connect(self.hide_panel)
 
         self.select_tab(TABS.index(settings.last_tab), persist=False)
+        if settings.theme == "system":
+            QApplication.instance().paletteChanged.connect(self._refresh_theme)
+
+    def _refresh_theme(self, _palette: QPalette) -> None:
+        dark = is_dark(self.settings.theme)
+        if dark == self._dark:
+            return
+        self._dark = dark
+        self.setStyleSheet(stylesheet(dark))
+        if self.emoji_page is not None:
+            self.emoji_page.set_dark(dark)
+        if self.clipboard_page is not None:
+            self.clipboard_page.set_dark(dark)
+        self.kaomoji_page.set_dark(dark)
+        self.symbols_page.set_dark(dark)
 
     def _empty_page(self, name: str) -> QWidget:
         page = QWidget()
@@ -198,6 +218,8 @@ class PopupPanel(QWidget):
     def show_panel(self) -> None:
         if not self.isVisible():
             self.inserter.capture_focused_field()
+        self.hint_animation.stop()
+        self.hint.graphicsEffect().setOpacity(1.0)
         self.hint.setText("Ctrl+Tab  Switch tab     Esc  Close")
         if self.emoji_page is not None and self.pages.currentIndex() == 0:
             self.emoji_page.refresh()
@@ -272,3 +294,7 @@ class PopupPanel(QWidget):
         else:
             QApplication.clipboard().setText(value)
             self.hint.setText("Copied — paste with Ctrl+V")
+        self.hint_animation.stop()
+        self.hint_animation.setStartValue(0.35)
+        self.hint_animation.setEndValue(1.0)
+        self.hint_animation.start()

@@ -76,7 +76,7 @@ class SymbolDelegate(QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
-        return QSize(58, 58)
+        return QSize(56, 58)
 
 
 class KaomojiDelegate(QStyledItemDelegate):
@@ -159,7 +159,7 @@ class TextPickerPage(QWidget):
             self.view.setWrapping(True)
             self.view.setResizeMode(QListView.ResizeMode.Adjust)
             self.view.setMovement(QListView.Movement.Static)
-            self.view.setGridSize(QSize(58, 58))
+            self.view.setGridSize(QSize(56, 58))
             self.view.setUniformItemSizes(True)
         else:
             self.view.setItemDelegate(KaomojiDelegate(dark=dark, parent=self.view))
@@ -174,6 +174,11 @@ class TextPickerPage(QWidget):
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.empty)
         self.refresh()
+
+    def set_dark(self, dark: bool) -> None:
+        self.category.set_dark(dark)
+        self.view.itemDelegate().dark = dark
+        self.view.viewport().update()
 
     def set_query(self, text: str) -> None:
         self.query = text.strip().casefold()
