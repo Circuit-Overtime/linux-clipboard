@@ -29,6 +29,7 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
         XDG_RUNTIME_DIR=str(runtime),
         XDG_STATE_HOME=str(tmp_path / "state"),
         XDG_CONFIG_HOME=str(tmp_path / "config"),
+        XDG_DATA_HOME=str(tmp_path / "data"),
         QT_QPA_PLATFORM="offscreen",
     )
     command = [sys.executable, "-m", "linux_dot_panel"]
@@ -55,6 +56,7 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
             result = cli(action)
             assert result.returncode == 0, (action, result.stderr)
         assert daemon.wait(timeout=3) == 0
+        assert (tmp_path / "data" / "linux-dot-panel" / "panel.db").is_file()
 
         # A shortcut must also work when the daemon was not already running.
         result = cli("toggle")
