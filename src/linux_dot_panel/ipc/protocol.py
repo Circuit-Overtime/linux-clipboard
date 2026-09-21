@@ -10,6 +10,7 @@ from pathlib import Path
 
 COMMANDS = frozenset({"toggle", "show", "hide", "status", "quit"})
 MAX_MESSAGE_BYTES = 4096
+MAX_CLIPBOARD_EVENT_BYTES = 1024 * 1024 * 4 // 3 + 2048
 
 
 def runtime_dir() -> Path:
@@ -39,8 +40,8 @@ def encode_message(payload: dict[str, object]) -> bytes:
     return (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
 
 
-def decode_message(data: bytes) -> dict[str, object]:
-    if len(data) > MAX_MESSAGE_BYTES:
+def decode_message(data: bytes, *, max_bytes: int = MAX_MESSAGE_BYTES) -> dict[str, object]:
+    if len(data) > max_bytes:
         raise ValueError("IPC message is too large")
     payload = json.loads(data)
     if not isinstance(payload, dict):

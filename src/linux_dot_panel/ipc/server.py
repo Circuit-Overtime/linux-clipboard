@@ -9,6 +9,7 @@ from PySide6.QtCore import QObject
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from linux_dot_panel.ipc.protocol import (
+    MAX_CLIPBOARD_EVENT_BYTES,
     MAX_MESSAGE_BYTES,
     decode_message,
     encode_message,
@@ -19,9 +20,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IpcServer(QObject):
-    def __init__(self, handler: Callable[[str], dict[str, object]]) -> None:
+    def __init__(
+        self,
+        handler: Callable[[str], dict[str, object]],
+        event_handler: Callable[[dict[str, object]], dict[str, object]] | None = None,
+    ) -> None:
         super().__init__()
         self.handler = handler
+        self.event_handler = event_handler
         self.server = QLocalServer(self)
         self.server.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
         self.server.newConnection.connect(self._accept)
@@ -49,17 +55,26 @@ class IpcServer(QObject):
         if buffer is None:
             return
         buffer.extend(bytes(connection.readAll()))
-        if len(buffer) > MAX_MESSAGE_BYTES:
+        if len(buffer) > MAX_CLIPBOARD_EVENT_BYTES:
             self._reply(connection, {"ok": False, "error": "Request too large"})
             return
         if b"\n" not in buffer:
             return
         try:
-            request = decode_message(bytes(buffer).split(b"\n", 1)[0])
+            request = decode_message(
+                bytes(buffer).split(b"\n", 1)[0], max_bytes=MAX_CLIPBOARD_EVENT_BYTES
+            )
             command = request.get("command")
             if not isinstance(command, str):
                 raise TypeError("Missing command")
-            response = self.handler(command)
+            if command == "clipboard_event":
+                if self.event_handler is None:
+                    raise ValueError("Clipboard event handler is unavailable")
+                response = self.event_handler(request)
+            elif len(buffer) > MAX_MESSAGE_BYTES:
+                raise ValueError("Request too large")
+            else:
+                response = self.handler(command)
         except (TypeError, ValueError) as error:
             response = {"ok": False, "error": str(error)}
         except Exception:

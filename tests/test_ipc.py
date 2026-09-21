@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
@@ -53,10 +54,34 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
             raise AssertionError("Daemon did not create its socket")
 
         for action in ("show", "hide", "toggle", "quit"):
+            if action == "quit":
+                for value in (b"copied from browser", b"copied from browser"):
+                    event = subprocess.run(
+                        [*command[:2], "linux_dot_panel.clipboard.watch_event"],
+                        input=value,
+                        env=dict(env, CLIPBOARD_STATE="data"),
+                        capture_output=True,
+                        timeout=5,
+                        check=False,
+                    )
+                    assert event.returncode == 0, event.stderr
+                sensitive = subprocess.run(
+                    [*command[:2], "linux_dot_panel.clipboard.watch_event"],
+                    input=b"password",
+                    env=dict(env, CLIPBOARD_STATE="sensitive"),
+                    capture_output=True,
+                    timeout=5,
+                    check=False,
+                )
+                assert sensitive.returncode == 0
             result = cli(action)
             assert result.returncode == 0, (action, result.stderr)
         assert daemon.wait(timeout=3) == 0
         assert (tmp_path / "data" / "linux-dot-panel" / "panel.db").is_file()
+        with sqlite3.connect(tmp_path / "data" / "linux-dot-panel" / "panel.db") as connection:
+            assert connection.execute(
+                "SELECT text_content, use_count FROM clipboard_items"
+            ).fetchall() == [("copied from browser", 2)]
 
         # A shortcut must also work when the daemon was not already running.
         result = cli("toggle")

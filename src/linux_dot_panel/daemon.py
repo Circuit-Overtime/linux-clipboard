@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import fcntl
 import logging
 import os
@@ -9,12 +11,14 @@ import sqlite3
 import sys
 from typing import IO
 
+from linux_dot_panel.clipboard.capture import MAX_TEXT_BYTES, ClipboardCapture
 from linux_dot_panel.config import Settings
 from linux_dot_panel.emoji.importer import ensure_emoji_dataset
 from linux_dot_panel.ipc.protocol import COMMANDS, lock_path
 from linux_dot_panel.logging_setup import configure_logging
 from linux_dot_panel.storage.database import open_database
 from linux_dot_panel.storage.migrations import UnsupportedSchemaError
+from linux_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +39,8 @@ def run_daemon() -> int:
     from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication
 
+    from linux_dot_panel.clipboard.backends.wayland import WaylandClipboardBackend
+    from linux_dot_panel.clipboard.backends.x11 import X11ClipboardBackend
     from linux_dot_panel.ipc.server import IpcServer
     from linux_dot_panel.ui.popup import PopupPanel
 
@@ -67,6 +73,9 @@ def run_daemon() -> int:
             app.setApplicationName("Linux Dot Panel")
             app.setQuitOnLastWindowClosed(False)
             panel = PopupPanel(settings, emoji_repository)
+            capture = ClipboardCapture(
+                ClipboardRepository(database), history_limit=settings.history_limit
+            )
 
             def handle(command: str) -> dict[str, object]:
                 if command not in COMMANDS:
@@ -81,9 +90,39 @@ def run_daemon() -> int:
                     QTimer.singleShot(50, app.quit)
                 return {"ok": True, "visible": panel.isVisible()}
 
-            server = IpcServer(handle)
+            def handle_clipboard_event(request: dict[str, object]) -> dict[str, object]:
+                encoded = request.get("data")
+                if not isinstance(encoded, str):
+                    raise TypeError("Missing clipboard data")
+                try:
+                    data = base64.b64decode(encoded, validate=True)
+                    if len(data) > MAX_TEXT_BYTES:
+                        raise ValueError("Clipboard data too large")
+                    text = data.decode("utf-8")
+                except (binascii.Error, UnicodeDecodeError, ValueError) as error:
+                    raise ValueError("Invalid clipboard data") from error
+                return {"ok": True, "stored": capture.capture(text)}
+
+            server = IpcServer(handle, handle_clipboard_event)
             server.start()
             app.aboutToQuit.connect(server.stop)
+            if app.platformName() == "wayland":
+                wayland_backend = WaylandClipboardBackend()
+                if wayland_backend.start():
+                    backend = wayland_backend
+                else:
+                    backend = X11ClipboardBackend()
+                    backend.clipboard_changed.connect(
+                        lambda text, sensitive: capture.capture(text, sensitive=sensitive)
+                    )
+                    backend.start()
+            else:
+                backend = X11ClipboardBackend()
+                backend.clipboard_changed.connect(
+                    lambda text, sensitive: capture.capture(text, sensitive=sensitive)
+                )
+                backend.start()
+            app.aboutToQuit.connect(backend.stop)
             LOGGER.info("Daemon started")
             return app.exec()
         finally:
