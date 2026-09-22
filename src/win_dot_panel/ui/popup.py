@@ -80,6 +80,7 @@ class PopupPanel(QWidget):
         self._dark = is_dark(settings.theme)
         self._drag_offset: QPoint | None = None
         self.setWindowTitle("Win Dot Panel")
+        self.setAccessibleDescription("Emoji, clipboard and symbol picker panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
             | Qt.WindowType.FramelessWindowHint
@@ -243,7 +244,7 @@ class PopupPanel(QWidget):
             button.setProperty("active", tab_index == index)
             button.style().unpolish(button)
             button.style().polish(button)
-        if persist and self.settings.last_tab != name:
+        if persist and self.settings.remember_last_tab and self.settings.last_tab != name:
             self.settings.last_tab = name
             try:
                 self.settings.save()
@@ -354,3 +355,5 @@ class PopupPanel(QWidget):
         self.hint_animation.setStartValue(0.35)
         self.hint_animation.setEndValue(1.0)
         self.hint_animation.start()
+        if self.settings.close_after_selection:
+            self.hide_panel()

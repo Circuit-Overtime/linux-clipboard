@@ -20,6 +20,9 @@ class Settings:
     last_tab: str = "Emoji"
     theme: str = "system"
     history_limit: int = 500
+    clipboard_enabled: bool = True
+    close_after_selection: bool = False
+    remember_last_tab: bool = True
 
     @classmethod
     def load(cls, path: Path | None = None) -> Settings:
@@ -33,6 +36,9 @@ class Settings:
             last_tab=data.get("last_tab", "Emoji"),
             theme=data.get("theme", "system"),
             history_limit=data.get("history_limit", 500),
+            clipboard_enabled=data.get("clipboard_enabled", True),
+            close_after_selection=data.get("close_after_selection", False),
+            remember_last_tab=data.get("remember_last_tab", True),
         )
         settings.validate()
         return settings
@@ -44,6 +50,12 @@ class Settings:
             raise ValueError(f"Unknown theme: {self.theme}")
         if type(self.history_limit) is not int or self.history_limit < 1:
             raise ValueError("history_limit must be a positive integer")
+        if type(self.clipboard_enabled) is not bool:
+            raise ValueError("clipboard_enabled must be a boolean")
+        if type(self.close_after_selection) is not bool:
+            raise ValueError("close_after_selection must be a boolean")
+        if type(self.remember_last_tab) is not bool:
+            raise ValueError("remember_last_tab must be a boolean")
 
     def save(self, path: Path | None = None) -> None:
         self.validate()

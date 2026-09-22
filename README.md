@@ -23,15 +23,35 @@ chmod 644 /var/tmp/win-dot-panel_0.1.0-3_all.deb
 sudo apt install /var/tmp/win-dot-panel_0.1.0-3_all.deb
 ```
 
+You can also install the Python wheel directly using pip (requires pipx or a virtual environment on modern distros):
+
+```bash
+pip install https://github.com/Circuit-Overtime/linux-clipboard/releases/download/v0.1.0-3/win_dot_panel-0.1.0-py3-none-any.whl
+```
+
 The release page also provides a checksum file if you want to verify the download. For other Linux distributions, see the [developer guide](docs/development.md) for the Python package.
 
 ## Open the panel
 
-Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once.
+Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once. By default, this creates an XDG autostart entry. You can also install it as a systemd user service instead by running `win-dot-panel install --method systemd`.
 
 To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. You can also assign **Super + V** to `win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. Run `win-dot-panel install` once to record copies while the panel is closed; the shortcut also starts the app if it is not already running.
 
 The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
+
+## Configuration
+
+Settings are saved in `~/.config/win-dot-panel/config.json`. You can modify it manually (restart the daemon to apply changes):
+
+```json
+{
+  "theme": "system",
+  "history_limit": 500,
+  "clipboard_enabled": true,
+  "close_after_selection": false,
+  "remember_last_tab": true
+}
+```
 
 ## Update
 
