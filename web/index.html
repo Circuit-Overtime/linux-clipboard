@@ -7,14 +7,21 @@
   <meta name="description" content="Win Dot Panel is a free, open source emoji picker and clipboard history app for Linux. Search emoji, kaomoji and symbols, save copied text and screenshots, and open the panel with keyboard shortcuts.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://packages.elixpo.com/">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Win Dot Panel">
   <meta property="og:title" content="Win Dot Panel | Emoji picker and clipboard history for Linux">
   <meta property="og:description" content="A free, open source Linux panel for emoji, kaomoji, symbols and searchable clipboard history. Install with APT and open it with a shortcut.">
   <meta property="og:url" content="https://packages.elixpo.com/">
+  <meta property="og:image" content="https://packages.elixpo.com/favicon.png">
+  <meta property="og:image:alt" content="Win Dot Panel panda mascot emerging from a package">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Win Dot Panel | Emoji picker and clipboard history for Linux">
   <meta name="twitter:description" content="Emoji, symbols and searchable clipboard history in a small Linux panel. Free and open source.">
+  <meta name="twitter:image" content="https://packages.elixpo.com/favicon.png">
   <title>Win Dot Panel | Emoji picker and clipboard history for Linux</title>
   <script type="application/ld+json">
     {
@@ -22,6 +29,7 @@
       "@type": "SoftwareApplication",
       "name": "Win Dot Panel",
       "url": "https://packages.elixpo.com/",
+      "image": "https://packages.elixpo.com/favicon.png",
       "description": "A free, open source emoji picker and clipboard history panel for Linux with searchable emoji, kaomoji, symbols, copied text and screenshots.",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Linux",
@@ -44,7 +52,7 @@
     .wrap { width:min(1120px,calc(100% - 40px)); margin:auto; }
     .nav { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:23px 0; }
     .brand { display:flex; align-items:center; gap:11px; font-size:17px; font-weight:720; letter-spacing:-.03em; }
-    .brand-mark { display:grid; place-items:center; width:32px; height:32px; border-radius:11px; background:linear-gradient(135deg,#bed0ff,#a891db); color:#1a2033; font-size:21px; }
+    .brand-mark { display:block; width:38px; height:38px; object-fit:contain; }
     .nav-links { display:flex; align-items:center; gap:28px; color:var(--muted); font-size:14px; }
     .nav-links .github { border:1px solid #555b72; border-radius:10px; padding:8px 13px; color:var(--text); }
     .hero { display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:44px; padding:78px 0 94px; }
@@ -108,7 +116,7 @@
 <body>
   <div class="wrap">
     <header class="nav">
-      <a class="brand" href="#top" aria-label="Win Dot Panel home"><span class="brand-mark">✳</span> Win Dot Panel</a>
+      <a class="brand" href="#top" aria-label="Win Dot Panel home"><img class="brand-mark" src="/favicon.png" width="38" height="38" alt=""> Win Dot Panel</a>
       <nav class="nav-links" aria-label="Main navigation"><a href="#features">Features</a><a href="#install">Install</a><a class="github" href="https://github.com/Circuit-Overtime/linux-clipboard">GitHub ↗</a></nav>
     </header>
     <main id="top">
