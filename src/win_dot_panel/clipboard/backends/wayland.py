@@ -21,13 +21,15 @@ class WaylandClipboardBackend(QObject):
     def __init__(self) -> None:
         super().__init__()
         self.process = QProcess(self)
+        self.image_process = QProcess(self)
         self.fallback = X11ClipboardBackend()
         self.fallback.clipboard_changed.connect(self.clipboard_changed)
         self.fallback.image_changed.connect(self.image_changed)
         self._using_fallback = False
         self._stopping = False
-        self.process.errorOccurred.connect(self._failed)
-        self.process.finished.connect(self._finished)
+        for process in (self.process, self.image_process):
+            process.errorOccurred.connect(self._failed)
+            process.finished.connect(self._finished)
 
     def start(self) -> bool:
         executable = shutil.which("wl-paste")
@@ -35,29 +37,36 @@ class WaylandClipboardBackend(QObject):
             LOGGER.warning("Wayland clipboard monitoring needs the wl-clipboard system package")
             self._enable_fallback()
             return True
-        self.process.start(
-            executable,
-            [
-                "--watch",
-                sys.executable,
-                "-m",
-                "win_dot_panel.clipboard.watch_event",
-            ],
-        )
-        if not self.process.waitForStarted(500):
-            LOGGER.warning(
-                "Could not start Wayland clipboard watcher: %s", self.process.errorString()
+        # Each watcher receives one format. Separate image and text watches keep
+        # screenshots when the source also offers a text representation.
+        for process, mime_type in ((self.process, "text"), (self.image_process, "image")):
+            process.start(
+                executable,
+                [
+                    "--type",
+                    mime_type,
+                    "--watch",
+                    sys.executable,
+                    "-m",
+                    "win_dot_panel.clipboard.watch_event",
+                ],
             )
-            self._enable_fallback()
+            if not process.waitForStarted(500):
+                LOGGER.warning(
+                    "Could not start Wayland clipboard watcher: %s", process.errorString()
+                )
+                self._enable_fallback()
+                break
         return True
 
     def stop(self) -> None:
         self._stopping = True
-        if self.process.state() != QProcess.ProcessState.NotRunning:
-            self.process.terminate()
-            if not self.process.waitForFinished(1000):
-                self.process.kill()
-                self.process.waitForFinished(1000)
+        for process in (self.process, self.image_process):
+            if process.state() != QProcess.ProcessState.NotRunning:
+                process.terminate()
+                if not process.waitForFinished(1000):
+                    process.kill()
+                    process.waitForFinished(1000)
         if self._using_fallback:
             self.fallback.stop()
 
@@ -66,6 +75,9 @@ class WaylandClipboardBackend(QObject):
             LOGGER.warning("Using Qt clipboard monitoring because wl-paste watch is unavailable")
             self._using_fallback = True
             self.fallback.start()
+            for process in (self.process, self.image_process):
+                if process.state() != QProcess.ProcessState.NotRunning:
+                    process.terminate()
 
     def get_text(self) -> str:
         return QApplication.clipboard().text()
