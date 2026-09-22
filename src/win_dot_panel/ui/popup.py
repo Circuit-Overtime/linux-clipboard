@@ -371,8 +371,9 @@ class PopupPanel(QWidget):
         elif self.pages.currentIndex() == 3:
             self.symbols_page.select_current_or_first()
 
-    def _insert_text(self, value: str) -> None:
-        if self.inserter.insert(value):
+    def _insert_text(self, value: str) -> bool:
+        inserted = self.inserter.insert(value)
+        if inserted:
             self.hint.setText("Inserted at the previous cursor position")
         else:
             self.hint.setText("Could not insert here — focus an editable text field and reopen")
@@ -380,11 +381,11 @@ class PopupPanel(QWidget):
         self.hint_animation.setStartValue(0.35)
         self.hint_animation.setEndValue(1.0)
         self.hint_animation.start()
+        return inserted
 
     def _insert_clipboard_item(self, item: ClipboardItem) -> None:
         if item.content_type == "text":
-            self._insert_text(item.text_content)
-            if self.hint.text() == "Inserted at the previous cursor position":
+            if self._insert_text(item.text_content):
                 self.hide_panel()
             return
         if not item.image_content:

@@ -72,9 +72,32 @@ def test_clipboard_page_inserts_full_text_after_loading_only_a_preview(tmp_path,
     assert len(page.model.records) == 1
     inserted = []
     monkeypatch.setattr(panel.inserter, "insert", lambda value: inserted.append(value) or True)
+    panel.show()
+    app.processEvents()
     QTest.keyClick(page.list, Qt.Key.Key_Return)
     assert inserted == [content]
     assert app.clipboard().text() != content
+    assert not panel.isVisible()
+    panel.close()
+    connection.close()
+
+
+def test_clipboard_text_keeps_panel_open_when_no_caret_was_captured(tmp_path, monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    connection = open_database(tmp_path / "panel.db")
+    repository = ClipboardRepository(connection)
+    repository.record_text("cannot insert", "hash", timestamp=1, history_limit=10)
+    panel = PopupPanel(Settings(), clipboard_repository=repository)
+    panel.select_tab(1, persist=False)
+    monkeypatch.setattr(panel.inserter, "insert", lambda value: False)
+    panel.show()
+    app.processEvents()
+
+    panel.clipboard_page.activate_current()
+
+    assert panel.isVisible()
+    assert panel.hint.text() == "Could not insert here — focus an editable text field and reopen"
     panel.close()
     connection.close()
 
