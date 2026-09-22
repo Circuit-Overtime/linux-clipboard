@@ -29,9 +29,9 @@ The release page also provides a checksum file if you want to verify the downloa
 
 Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once.
 
-To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help.
+To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. You can also assign **Super + V** to `win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help.
 
-Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
+The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
 
 ## Updates and removal
 

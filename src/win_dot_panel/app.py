@@ -10,11 +10,13 @@ from win_dot_panel.emoji.importer import ensure_emoji_dataset
 from win_dot_panel.logging_setup import configure_logging
 from win_dot_panel.storage.database import open_database
 from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
+from win_dot_panel.ui.platform import configure_window_platform
 
 LOGGER = logging.getLogger(__name__)
 
 
 def run_demo() -> int:
+    configure_window_platform()
     from PySide6.QtWidgets import QApplication
 
     from win_dot_panel.ui.popup import PopupPanel

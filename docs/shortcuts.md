@@ -2,6 +2,8 @@
 
 Win Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `win-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
 
+For a separate clipboard shortcut, assign **Super + V** to `win-dot-panel toggle-clipboard`. It opens the Clipboard tab, switches to it from another tab, or closes the panel when Clipboard is already open.
+
 ## Choose the command
 
 For an installed executable available to the desktop session, use:

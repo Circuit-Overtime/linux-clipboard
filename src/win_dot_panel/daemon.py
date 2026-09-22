@@ -12,13 +12,14 @@ import sys
 from typing import IO
 
 from win_dot_panel.clipboard.capture import MAX_TEXT_BYTES, ClipboardCapture
-from win_dot_panel.config import Settings
+from win_dot_panel.config import TABS, Settings
 from win_dot_panel.emoji.importer import ensure_emoji_dataset
 from win_dot_panel.ipc.protocol import COMMANDS, lock_path
 from win_dot_panel.logging_setup import configure_logging
 from win_dot_panel.storage.database import open_database
 from win_dot_panel.storage.migrations import UnsupportedSchemaError
 from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
+from win_dot_panel.ui.platform import configure_window_platform
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ def _acquire_lock() -> IO[str] | None:
 
 
 def run_daemon() -> int:
+    configure_window_platform()
     from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication
 
@@ -81,13 +83,23 @@ def run_daemon() -> int:
                     return {"ok": False, "error": f"Unknown command: {command}"}
                 if command == "toggle":
                     panel.hide_panel() if panel.isVisible() else panel.show_panel()
+                elif command == "toggle-clipboard":
+                    if panel.isVisible() and panel.pages.currentIndex() == TABS.index("Clipboard"):
+                        panel.hide_panel()
+                    else:
+                        panel.select_tab(TABS.index("Clipboard"))
+                        panel.show_panel()
                 elif command == "show":
                     panel.show_panel()
                 elif command == "hide":
                     panel.hide_panel()
                 elif command == "quit":
                     QTimer.singleShot(50, app.quit)
-                return {"ok": True, "visible": panel.isVisible()}
+                return {
+                    "ok": True,
+                    "visible": panel.isVisible(),
+                    "tab": TABS[panel.pages.currentIndex()],
+                }
 
             def handle_clipboard_event(request: dict[str, object]) -> dict[str, object]:
                 encoded = request.get("data")
@@ -105,7 +117,7 @@ def run_daemon() -> int:
             server = IpcServer(handle, handle_clipboard_event)
             server.start()
             app.aboutToQuit.connect(server.stop)
-            if app.platformName() == "wayland":
+            if os.environ.get("XDG_SESSION_TYPE") == "wayland" or app.platformName() == "wayland":
                 wayland_backend = WaylandClipboardBackend()
                 if wayland_backend.start():
                     backend = wayland_backend

@@ -4,8 +4,19 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPropertyAnimation, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QCursor, QKeyEvent, QKeySequence, QPalette, QShortcut
+from PySide6.QtCore import (
+    QEasingCurve,
+    QEvent,
+    QObject,
+    QPoint,
+    QPropertyAnimation,
+    QRect,
+    QSize,
+    Qt,
+    QTimer,
+    Signal,
+)
+from PySide6.QtGui import QColor, QCursor, QKeyEvent, QKeySequence, QMouseEvent, QPalette, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -40,6 +51,20 @@ PAGE_TEXT = {
 }
 
 
+def position_near_cursor(cursor: QPoint, size: QSize, area: QRect) -> QPoint:
+    """Place the popup beside the pointer and keep it within the usable screen."""
+    gap = 16
+    x = cursor.x() + gap
+    y = cursor.y() + gap
+    if x + size.width() > area.right() + 1:
+        x = cursor.x() - size.width() - gap
+    if y + size.height() > area.bottom() + 1:
+        y = cursor.y() - size.height() - gap
+    x = max(area.left(), min(x, area.right() + 1 - size.width()))
+    y = max(area.top(), min(y, area.bottom() + 1 - size.height()))
+    return QPoint(x, y)
+
+
 class PopupPanel(QWidget):
     panel_hidden = Signal()
 
@@ -53,6 +78,7 @@ class PopupPanel(QWidget):
         self.settings = settings
         self.inserter = TextInserter()
         self._dark = is_dark(settings.theme)
+        self._drag_offset: QPoint | None = None
         self.setWindowTitle("Win Dot Panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -77,18 +103,28 @@ class PopupPanel(QWidget):
         panel.setGraphicsEffect(shadow)
 
         content = QVBoxLayout(panel)
-        content.setContentsMargins(24, 22, 24, 18)
+        content.setContentsMargins(24, 14, 24, 18)
         content.setSpacing(16)
 
-        title = QLabel("Win Dot Panel")
-        title.setObjectName("title")
-        content.addWidget(title)
+        self.drag_handle = QFrame()
+        self.drag_handle.setFixedHeight(14)
+        self.drag_handle.setAccessibleName("Drag panel")
+        self.drag_handle.setCursor(Qt.CursorShape.OpenHandCursor)
+        drag_layout = QHBoxLayout(self.drag_handle)
+        drag_layout.setContentsMargins(0, 0, 0, 0)
+        grip = QFrame()
+        grip.setObjectName("dragGrip")
+        grip.setFixedSize(32, 4)
+        grip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        drag_layout.addWidget(grip, alignment=Qt.AlignmentFlag.AlignCenter)
+        content.addWidget(self.drag_handle)
 
         self.search = QLineEdit()
         self.search.setObjectName("search")
         self.search.setClearButtonEnabled(True)
         self.search.setAccessibleName("Search current tab")
         self.search.installEventFilter(self)
+        self.drag_handle.installEventFilter(self)
         content.addWidget(self.search)
 
         tab_bar = QFrame()
@@ -218,6 +254,10 @@ class PopupPanel(QWidget):
     def show_panel(self) -> None:
         if not self.isVisible():
             self.inserter.capture_focused_field()
+            cursor = QCursor.pos()
+            screen = QApplication.screenAt(cursor) or QApplication.primaryScreen()
+            if screen is not None:
+                self.move(position_near_cursor(cursor, self.size(), screen.availableGeometry()))
         self.hint_animation.stop()
         self.hint.graphicsEffect().setOpacity(1.0)
         self.hint.setText("Ctrl+Tab  Switch tab     Esc  Close")
@@ -225,13 +265,6 @@ class PopupPanel(QWidget):
             self.emoji_page.refresh()
         if self.clipboard_page is not None and self.pages.currentIndex() == 1:
             self.clipboard_page.refresh()
-        screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
-        if screen is not None:
-            area = screen.availableGeometry()
-            self.move(
-                area.x() + (area.width() - self.width()) // 2,
-                area.y() + (area.height() - self.height()) // 2 + 20,
-            )
         self.show()
         self.raise_()
         self.activateWindow()
@@ -248,6 +281,29 @@ class PopupPanel(QWidget):
         super().changeEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self.drag_handle and isinstance(event, QMouseEvent):
+            if (
+                event.type() == QEvent.Type.MouseButtonPress
+                and event.button() == Qt.MouseButton.LeftButton
+            ):
+                self.drag_handle.setCursor(Qt.CursorShape.ClosedHandCursor)
+                window = self.windowHandle()
+                if window is None or not window.startSystemMove():
+                    self._drag_offset = event.globalPosition().toPoint() - self.pos()
+                event.accept()
+                return True
+            if event.type() == QEvent.Type.MouseMove and self._drag_offset is not None:
+                self.move(event.globalPosition().toPoint() - self._drag_offset)
+                event.accept()
+                return True
+            if (
+                event.type() == QEvent.Type.MouseButtonRelease
+                and event.button() == Qt.MouseButton.LeftButton
+            ):
+                self._drag_offset = None
+                self.drag_handle.setCursor(Qt.CursorShape.OpenHandCursor)
+                event.accept()
+                return True
         if (
             watched is self.search
             and isinstance(event, QKeyEvent)

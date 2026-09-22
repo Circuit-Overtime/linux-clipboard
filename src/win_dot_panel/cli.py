@@ -35,13 +35,15 @@ def _start_daemon() -> None:
 
 
 def _run_command(command: str) -> int:
-    if command == "toggle":
+    if command in ("toggle", "toggle-clipboard"):
         try:
             response = send_command(command)
         except OSError:
             try:
                 _start_daemon()
-                response = send_command("show", timeout=3.0)
+                response = send_command(
+                    "show" if command == "toggle" else "toggle-clipboard", timeout=3.0
+                )
             except (OSError, RuntimeError) as error:
                 print(error, file=sys.stderr)
                 return 1
@@ -76,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
         "--method", choices=("xdg", "systemd"), default="xdg", help="Session startup method"
     )
     commands.add_parser("uninstall", help="Remove session autostart")
+    commands.add_parser("toggle-clipboard", help="Open Clipboard or close it if already open")
     for command in ("toggle", "show", "hide", "status", "quit"):
         commands.add_parser(command, help=f"Send {command} to the daemon")
     args = parser.parse_args(argv)
@@ -101,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
             print(error, file=sys.stderr)
             return 1
         return 0
-    if args.command in ("toggle", "show", "hide", "status", "quit"):
+    if args.command in ("toggle", "toggle-clipboard", "show", "hide", "status", "quit"):
         return _run_command(args.command)
 
     parser.print_help()

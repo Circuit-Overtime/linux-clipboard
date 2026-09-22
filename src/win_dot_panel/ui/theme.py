@@ -53,7 +53,7 @@ def stylesheet(dark: bool) -> str:
         border: 1px solid $border;
         border-radius: 20px;
     }
-    QLabel#title { color: $text; font-size: 18px; font-weight: 650; }
+    QFrame#dragGrip { background: $border; border: none; border-radius: 2px; }
     QLabel#subtitle, QLabel#hint, QLabel#emptyCaption { color: $muted; }
     QLabel#emptyTitle { color: $text; font-size: 18px; font-weight: 600; }
     QLabel#emptyIcon { color: $accent; font-size: 38px; }

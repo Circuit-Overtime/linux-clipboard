@@ -9,6 +9,7 @@ import time
 
 import pytest
 
+from win_dot_panel.ipc.client import send_command
 from win_dot_panel.ipc.protocol import decode_message, encode_message
 
 
@@ -17,7 +18,7 @@ def test_ipc_message_round_trip():
     assert decode_message(encode_message(payload)) == payload
 
 
-def test_cli_reaches_daemon_over_unix_socket(tmp_path):
+def test_cli_reaches_daemon_over_unix_socket(tmp_path, monkeypatch):
     runtime = tmp_path / "runtime"
     runtime.mkdir(mode=0o700)
     with socket.socket(socket.AF_UNIX) as probe:
@@ -33,6 +34,7 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
         XDG_DATA_HOME=str(tmp_path / "data"),
         QT_QPA_PLATFORM="offscreen",
     )
+    monkeypatch.setenv("XDG_RUNTIME_DIR", str(runtime))
     command = [sys.executable, "-m", "win_dot_panel"]
     daemon = subprocess.Popen([*command, "daemon"], env=env)
 
@@ -52,6 +54,13 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
             time.sleep(0.05)
         else:
             raise AssertionError("Daemon did not create its socket")
+
+        assert cli("show").returncode == 0
+        assert cli("toggle-clipboard").returncode == 0
+        assert send_command("status")["tab"] == "Clipboard"
+        assert send_command("status")["visible"] is True
+        assert cli("toggle-clipboard").returncode == 0
+        assert send_command("status")["visible"] is False
 
         for action in ("show", "hide", "toggle", "quit"):
             if action == "quit":
@@ -87,6 +96,13 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
         result = cli("toggle")
         assert result.returncode == 0, result.stderr
         assert cli("status").returncode == 0
+        assert cli("quit").returncode == 0
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline and cli("status").returncode == 0:
+            time.sleep(0.05)
+        result = cli("toggle-clipboard")
+        assert result.returncode == 0, result.stderr
+        assert send_command("status")["tab"] == "Clipboard"
         assert cli("quit").returncode == 0
     finally:
         if daemon.poll() is None:
