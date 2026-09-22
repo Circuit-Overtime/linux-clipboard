@@ -39,6 +39,18 @@ python scripts/check-wheel.py dist/linux_dot_panel-*.whl
 
 The check verifies that the wheel contains the local datasets, SQL migrations, PySide6 dependency metadata, and `linux-dot-panel` entry point. Install the wheel into a Python environment with `python -m pip install dist/linux_dot_panel-*.whl`; pip handles Python dependencies, while `wl-clipboard` remains a separate system package on Wayland. The wheel does not create an autostart entry until you run `linux-dot-panel install`.
 
+## Build a Debian package
+
+The first `.deb` targets Debian 13, which provides the required PySide6 Qt Widgets package. After building and checking the wheel, run:
+
+```bash
+python scripts/build_deb.py dist/linux_dot_panel-*.whl
+dpkg-deb --info dist/linux-dot-panel_*.deb
+dpkg-deb --contents dist/linux-dot-panel_*.deb
+```
+
+The package installs the app for system Python and declares dependencies on `python3-pyside6.qtwidgets`, `python3-gi`, the AT-SPI typelib, and `wl-clipboard`. Install it with `sudo apt install ./dist/linux-dot-panel_*.deb` on a compatible Debian system. It leaves your clipboard database and user configuration untouched; use `linux-dot-panel install` separately to enable login startup. Ubuntu and other distributions should use the wheel until their system packages are verified.
+
 Clipboard history is stored locally. The application does not use a remote service for its core features.
 
 Clipboard monitoring is event driven. On Wayland, a source checkout can run `sh scripts/install-system-deps.sh` to install the required `wl-clipboard` system package with apt, dnf, or pacman; the daemon then runs `wl-paste --watch`. For a wheel install, install `wl-clipboard` with the system package manager separately because pip cannot install OS packages. If `wl-paste` is unavailable, Qt clipboard notifications provide a partial fallback. On X11, Qt clipboard notifications are used directly. The watcher stores text up to 1 MiB, merges duplicates, respects the configured history limit, and skips content marked sensitive by the source.
