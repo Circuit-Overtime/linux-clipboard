@@ -11,17 +11,21 @@
   <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Win Dot Panel">
+  <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Win Dot Panel | Emoji picker and clipboard history for Linux">
   <meta property="og:description" content="A free, open source Linux panel for emoji, kaomoji, symbols and searchable clipboard history. Install with APT and open it with a shortcut.">
   <meta property="og:url" content="https://packages.elixpo.com/">
-  <meta property="og:image" content="https://packages.elixpo.com/favicon.png">
-  <meta property="og:image:alt" content="Win Dot Panel panda mascot emerging from a package">
-  <meta property="og:image:width" content="512">
-  <meta property="og:image:height" content="512">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://packages.elixpo.com/og-image.png">
+  <meta property="og:image:secure_url" content="https://packages.elixpo.com/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="Linux Packages from Elixpo social card with a panda mascot">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="720">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Win Dot Panel | Emoji picker and clipboard history for Linux">
   <meta name="twitter:description" content="Emoji, symbols and searchable clipboard history in a small Linux panel. Free and open source.">
-  <meta name="twitter:image" content="https://packages.elixpo.com/favicon.png">
+  <meta name="twitter:image" content="https://packages.elixpo.com/og-image.png">
+  <meta name="twitter:image:alt" content="Linux Packages from Elixpo social card with a panda mascot">
   <title>Win Dot Panel | Emoji picker and clipboard history for Linux</title>
   <script type="application/ld+json">
     {
@@ -30,6 +34,7 @@
       "name": "Win Dot Panel",
       "url": "https://packages.elixpo.com/",
       "image": "https://packages.elixpo.com/favicon.png",
+      "sameAs": "https://github.com/Circuit-Overtime/linux-clipboard",
       "description": "A free, open source emoji picker and clipboard history panel for Linux with searchable emoji, kaomoji, symbols, copied text and screenshots.",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Linux",
@@ -72,7 +77,7 @@
     .preview { min-height:460px; padding:17px 19px 20px; border-radius:22px; background:#fafbff; color:#202537; }
     .grip { width:33px; height:4px; margin:0 auto 15px; border-radius:5px; background:#c8cad4; }
     .search { padding:12px 15px; border:1.5px solid #b7c8f4; border-radius:12px; color:#8a90a2; font-size:14px; }
-    .tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; margin:16px 0 18px; padding:4px; border-radius:13px; background:#eceef4; color:#667082; font-size:12px; text-align:center; }
+    .tabs { display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:16px 0 18px; padding:4px; border-radius:13px; background:#eceef4; color:#667082; font-size:12px; text-align:center; }
     .tabs span { padding:8px 2px; }
     .tabs .active { border-radius:9px; background:white; color:#222737; box-shadow:0 1px 4px #25315122; font-weight:700; }
     .preview-label { display:flex; justify-content:space-between; align-items:center; margin:15px 0 9px; font-size:13px; font-weight:700; }
@@ -131,7 +136,7 @@
         <div class="preview-shell" aria-label="Preview of the emoji panel">
           <div class="preview">
             <div class="grip"></div><div class="search">⌕ &nbsp;Search emoji…</div>
-            <div class="tabs"><span class="active">Emoji</span><span>Clipboard</span><span>Kaomoji</span><span>Symbols</span></div>
+            <div class="tabs"><span class="active">Emoji</span><span>Clipboard</span><span>Kaomoji</span><span>Symbols</span><span>Open Source</span></div>
             <div class="preview-label">Recent <small>Your favorites, ready to use</small></div>
             <div class="emoji-grid"><span class="picked">✨</span><span>🚀</span><span>😊</span><span>🎉</span><span>💡</span><span>❤️</span><span>🌿</span><span>👍</span></div>
             <div class="preview-label">Browse <small>All emoji ⌄</small></div>
