@@ -34,7 +34,7 @@ The wheel includes the offline emoji dataset, SQL migrations, and CLI entry poin
 
 ## Publish a release
 
-The [release workflow](../.github/workflows/release-deb.yml) builds a Debian package from a `v<version>-<revision>` tag. For the current project version, the next stable tag should use a revision greater than `3`. It publishes the `.deb` and `SHA256SUMS` to a GitHub Release. The version in the tag must match `pyproject.toml`.
+The [release workflow](../.github/workflows/release-deb.yml) builds a Debian package from a `v<version>-<revision>` tag. For the current project version, the next stable tag should use a revision greater than `3`. Before publishing, it checks lint and formatting, runs the tests, validates the wheel, checks the Debian package contents and metadata, and verifies its checksum. A failed check prevents the release. The version in the tag must match `pyproject.toml`.
 
 Package-related pushes to `main` also publish numbered prereleases. Their Debian version includes `~main.<run number>`, so regular releases remain newer for APT. Documentation-only pushes do not publish a package.
 
