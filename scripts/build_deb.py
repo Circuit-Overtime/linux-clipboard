@@ -45,6 +45,7 @@ def _copy_module(wheel: ZipFile, stage: Path) -> None:
         f"{MODULE}/__init__.py",
         f"{MODULE}/cli.py",
         f"{MODULE}/resources/emoji.json",
+        f"{MODULE}/resources/UNICODE-LICENSE.txt",
         f"{MODULE}/storage/schema.sql",
     }
     if not required.issubset(members):
@@ -75,6 +76,22 @@ def _write_control(stage: Path, version: str, revision: int) -> None:
         f"Depends: {DEPENDENCIES}\n"
         "Description: Emoji and clipboard panel for Linux\n"
         " A floating emoji, clipboard, kaomoji, and symbols panel for GNOME and KDE.\n",
+        encoding="utf-8",
+    )
+
+
+def _write_copyright(stage: Path, wheel: ZipFile) -> None:
+    mit_license = (Path(__file__).resolve().parents[1] / "LICENSE").read_text(encoding="utf-8")
+    unicode_license = wheel.read(f"{MODULE}/resources/UNICODE-LICENSE.txt").decode("utf-8")
+    copyright_file = stage / "usr/share/doc" / PACKAGE / "copyright"
+    copyright_file.parent.mkdir(parents=True, exist_ok=True)
+    copyright_file.write_text(
+        "Upstream-Name: Win Dot Panel\n"
+        "Source: https://github.com/Circuit-Overtime/linux-clipboard\n\n"
+        "Application code and documentation: MIT License\n\n"
+        f"{mit_license.rstrip()}\n\n"
+        "Bundled emoji data: Unicode License v3\n\n"
+        f"{unicode_license.rstrip()}\n",
         encoding="utf-8",
     )
 
@@ -111,6 +128,7 @@ def build_deb(
                 encoding="utf-8",
             )
             _write_control(stage, version, revision)
+            _write_copyright(stage, wheel)
             _set_package_modes(stage)
             subprocess.run(
                 ["dpkg-deb", "--build", "--root-owner-group", str(stage), str(destination)],

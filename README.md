@@ -38,3 +38,7 @@ Use the tabs to browse or search. Click an emoji or symbol to insert it. On the 
 Download and install a newer package from [Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases) when one is available. To stop starting at login, run `win-dot-panel uninstall`. To remove the app, run `sudo apt remove win-dot-panel`. Removing it does not erase your saved clipboard history.
 
 Developing or packaging the app? See the [developer guide](docs/development.md) and [implementation plan](docs/implementation-plan.md).
+
+## License
+
+The app's code is available under the [MIT License](LICENSE). The bundled emoji data retains the [Unicode License v3](src/win_dot_panel/resources/UNICODE-LICENSE.txt).
