@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from math import ceil
+
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QRect, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeyEvent, QPainter
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -15,8 +17,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from win_dot_panel.text_picker.data import KAOMOJI, SYMBOLS, TextItem
+from win_dot_panel.text_picker.data import KAOMOJI, KAOMOJI_CATEGORIES, SYMBOLS, TextItem
 from win_dot_panel.ui.widgets.category_combo import CategoryComboBox
+
+PAGE_SIZE = 240
 
 
 class TextItemModel(QAbstractListModel):
@@ -41,6 +45,14 @@ class TextItemModel(QAbstractListModel):
         self.beginResetModel()
         self.records = records
         self.endResetModel()
+
+    def append(self, records: list[TextItem]) -> None:
+        if not records:
+            return
+        start = len(self.records)
+        self.beginInsertRows(QModelIndex(), start, start + len(records) - 1)
+        self.records.extend(records)
+        self.endInsertRows()
 
 
 class PickerView(QListView):
@@ -100,24 +112,32 @@ class KaomojiDelegate(QStyledItemDelegate):
         painter.setBrush(QColor(background))
         painter.setPen(QColor("#555862" if self.dark else "#e1e3e8"))
         painter.drawRoundedRect(card, 10, 10)
-        left = card.left() + 13
-        width = card.width() - 26
+        left = card.left() + 12
+        width = card.width() - 24
         font = QFont(option.font)
-        font.setPointSize(16)
+        font.setPointSize(15)
         painter.setFont(font)
         painter.setPen(QColor("#f4f4f6" if self.dark else "#20232b"))
         painter.drawText(
-            QRect(left, card.top() + 5, width, 27),
-            Qt.AlignmentFlag.AlignVCenter,
-            painter.fontMetrics().elidedText(item.value, Qt.TextElideMode.ElideRight, width),
+            QRect(left, card.top() + 5, width, card.height() - 29),
+            Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWrapAnywhere,
+            item.value,
         )
         painter.setFont(option.font)
         painter.setPen(QColor("#a6a9b2" if self.dark else "#727782"))
-        painter.drawText(QRect(left, card.top() + 35, width, 17), item.name)
+        painter.drawText(QRect(left, card.bottom() - 21, width, 17), item.name)
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
-        return QSize(100, 63)
+        item: TextItem = index.model().records[index.row()]
+        font = QFont(option.font)
+        font.setPointSize(15)
+        value_width = QFontMetrics(font).horizontalAdvance(item.value)
+        name_width = QFontMetrics(option.font).horizontalAdvance(item.name)
+        available = max(120, self.parent().viewport().width() - 12)
+        width = min(max(116, value_width + 30, name_width + 28), min(420, available))
+        lines = ceil(value_width / max(1, width - 28))
+        return QSize(width, 60 + (lines - 1) * 25)
 
 
 class TextPickerPage(QWidget):
@@ -130,6 +150,7 @@ class TextPickerPage(QWidget):
         self.kind = kind
         self.items = KAOMOJI if kind == "Kaomoji" else SYMBOLS
         self.query = ""
+        self._matches: list[TextItem] = []
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
@@ -141,7 +162,12 @@ class TextPickerPage(QWidget):
         heading.addStretch()
         self.category = CategoryComboBox(dark=dark)
         self.category.setAccessibleName(f"{kind} category")
-        self.category.addItems(["All", *dict.fromkeys(item.category for item in self.items)])
+        categories = (
+            KAOMOJI_CATEGORIES
+            if kind == "Kaomoji"
+            else tuple(dict.fromkeys(item.category for item in self.items))
+        )
+        self.category.addItems(["All", *categories])
         self.category.currentTextChanged.connect(self.refresh)
         heading.addWidget(self.category)
         layout.addLayout(heading)
@@ -163,10 +189,16 @@ class TextPickerPage(QWidget):
             self.view.setUniformItemSizes(True)
         else:
             self.view.setItemDelegate(KaomojiDelegate(dark=dark, parent=self.view))
-            self.view.setSpacing(5)
-            self.view.setUniformItemSizes(True)
+            self.view.setViewMode(QListView.ViewMode.IconMode)
+            self.view.setFlow(QListView.Flow.LeftToRight)
+            self.view.setWrapping(True)
+            self.view.setResizeMode(QListView.ResizeMode.Adjust)
+            self.view.setMovement(QListView.Movement.Static)
+            self.view.setSpacing(6)
+            self.view.setUniformItemSizes(False)
         self.view.clicked.connect(self.select_index)
         self.view.selected.connect(self.select_index)
+        self.view.verticalScrollBar().valueChanged.connect(self._maybe_load_more)
         layout.addWidget(self.view, 1)
 
         self.empty = QLabel(f"No {kind.lower()} found")
@@ -187,7 +219,7 @@ class TextPickerPage(QWidget):
     def refresh(self) -> None:
         category = self.category.currentText()
         terms = self.query.split()
-        records = [
+        self._matches = [
             item
             for item in self.items
             if (category == "All" or item.category == category)
@@ -195,11 +227,17 @@ class TextPickerPage(QWidget):
                 term in f"{item.value} {item.name} {item.keywords}".casefold() for term in terms
             )
         ]
-        self.model.replace(records)
-        self.view.setVisible(bool(records))
-        self.empty.setVisible(not records)
-        if records:
+        self.model.replace(self._matches[:PAGE_SIZE])
+        self.view.setVisible(bool(self._matches))
+        self.empty.setVisible(not self._matches)
+        if self._matches:
             self.view.setCurrentIndex(self.model.index(0, 0))
+
+    def _maybe_load_more(self, value: int) -> None:
+        bar = self.view.verticalScrollBar()
+        if value >= bar.maximum() - bar.pageStep() and len(self.model.records) < len(self._matches):
+            start = len(self.model.records)
+            self.model.append(self._matches[start : start + PAGE_SIZE])
 
     def select_current_or_first(self) -> None:
         index = self.view.currentIndex()
