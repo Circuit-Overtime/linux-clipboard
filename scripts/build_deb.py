@@ -86,11 +86,17 @@ def _set_package_modes(stage: Path) -> None:
     (stage / "usr/bin" / PACKAGE).chmod(0o755)
 
 
-def build_deb(wheel_path: Path, output_dir: Path, *, revision: int = 1) -> Path:
+def build_deb(
+    wheel_path: Path, output_dir: Path, *, revision: int = 1, snapshot_run: int | None = None
+) -> Path:
     if revision < 1:
         raise ValueError("Debian revision must be positive")
+    if snapshot_run is not None and snapshot_run < 1:
+        raise ValueError("Snapshot run must be positive")
     with ZipFile(wheel_path) as wheel:
         version = _wheel_version(wheel)
+        if snapshot_run is not None:
+            version = f"{version}~main.{snapshot_run}"
         destination = output_dir / f"{PACKAGE}_{version}-{revision}_all.deb"
         output_dir.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(prefix="win-dot-panel-deb-") as temporary:
@@ -118,9 +124,12 @@ def main() -> int:
     parser.add_argument("wheel", type=Path, help="Verified win-dot-panel .whl file")
     parser.add_argument("--output-dir", type=Path, default=Path("dist"))
     parser.add_argument("--revision", type=int, default=1, help="Debian package revision")
+    parser.add_argument("--snapshot-run", type=int, help="Main branch workflow run number")
     args = parser.parse_args()
     try:
-        path = build_deb(args.wheel, args.output_dir, revision=args.revision)
+        path = build_deb(
+            args.wheel, args.output_dir, revision=args.revision, snapshot_run=args.snapshot_run
+        )
     except (OSError, ValueError, BadZipFile, subprocess.CalledProcessError) as error:
         print(f"Debian package build failed: {error}", file=sys.stderr)
         return 1
