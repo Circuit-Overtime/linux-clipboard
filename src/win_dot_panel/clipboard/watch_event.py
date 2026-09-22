@@ -8,21 +8,30 @@ import socket
 import sys
 
 from win_dot_panel.clipboard.capture import MAX_TEXT_BYTES
+from win_dot_panel.clipboard.images import MAX_IMAGE_BYTES
 from win_dot_panel.ipc.protocol import decode_message, encode_message, socket_path
 
 
 def main() -> int:
     if os.environ.get("CLIPBOARD_STATE") in {"nil", "sensitive"}:
         return 0
-    data = sys.stdin.buffer.read(MAX_TEXT_BYTES + 1)
-    if not data or len(data) > MAX_TEXT_BYTES:
+    mime_type = os.environ.get("CLIPBOARD_TYPE", "text/plain")
+    image = mime_type.startswith("image/")
+    limit = MAX_IMAGE_BYTES if image else MAX_TEXT_BYTES
+    data = sys.stdin.buffer.read(limit + 1)
+    if not data or len(data) > limit:
         return 0
-    try:
-        data.decode("utf-8")
-    except UnicodeDecodeError:
-        return 0
+    if not image:
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError:
+            return 0
     message = encode_message(
-        {"command": "clipboard_event", "data": base64.b64encode(data).decode("ascii")}
+        {
+            "command": "clipboard_event",
+            "data": base64.b64encode(data).decode("ascii"),
+            "mime_type": mime_type,
+        }
     )
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:

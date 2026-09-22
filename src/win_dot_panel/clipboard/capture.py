@@ -6,6 +6,7 @@ import hashlib
 import time
 
 from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
+from win_dot_panel.clipboard.images import normalize_image
 
 MAX_TEXT_BYTES = 1024 * 1024
 
@@ -33,5 +34,22 @@ class ClipboardCapture:
         digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
         self.repository.record_text(
             normalized, digest, timestamp=int(time.time_ns()), history_limit=self.history_limit
+        )
+        return True
+
+    def capture_image(self, data: bytes, mime_type: str, *, sensitive: bool = False) -> bool:
+        if sensitive:
+            return False
+        normalized = normalize_image(data, mime_type)
+        if normalized is None:
+            return False
+        image, thumbnail = normalized
+        digest = hashlib.sha256(b"image\0" + image).hexdigest()
+        self.repository.record_image(
+            image,
+            thumbnail,
+            digest,
+            timestamp=int(time.time_ns()),
+            history_limit=self.history_limit,
         )
         return True

@@ -10,7 +10,7 @@ from pathlib import Path
 
 COMMANDS = frozenset({"toggle", "toggle-clipboard", "show", "hide", "status", "quit"})
 MAX_MESSAGE_BYTES = 4096
-MAX_CLIPBOARD_EVENT_BYTES = 1024 * 1024 * 4 // 3 + 2048
+MAX_CLIPBOARD_EVENT_BYTES = 16 * 1024 * 1024 * 4 // 3 + 2048
 
 
 def runtime_dir() -> Path:

@@ -57,9 +57,21 @@ sudo apt install --allow-downgrades /var/tmp/win-dot-panel.deb
 
 The last command stops any older background process. If it says the daemon is not running, the install is still complete.
 
-APT cannot discover new packages from a GitHub Releases page by itself. Other apps make `sudo apt update && sudo apt upgrade` work by publishing a signed APT repository. This project does not yet have one.
+APT cannot discover new packages from a GitHub Releases page by itself. Other apps make `sudo apt update && sudo apt upgrade` work by publishing a signed APT repository. We are preparing one on GitHub Pages. **It is not live yet.** After its first stable package is published, add it once with:
 
-We are preparing a [signed APT repository](docs/apt-repository.md) on GitHub Pages. Once it has its first stable package, users will be able to add it once and receive later stable updates through APT.
+```bash
+sudo install -d -m 755 /etc/apt/keyrings
+curl -fsSL -o /var/tmp/win-dot-panel-apt.asc \
+  https://circuit-overtime.github.io/linux-clipboard/apt/keyring.asc
+sudo gpg --dearmor --yes -o /etc/apt/keyrings/win-dot-panel.gpg \
+  /var/tmp/win-dot-panel-apt.asc
+echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://circuit-overtime.github.io/linux-clipboard/apt/ ./' | \
+  sudo tee /etc/apt/sources.list.d/win-dot-panel.list
+sudo apt update
+sudo apt install win-dot-panel
+```
+
+Then update stable releases with `sudo apt update && sudo apt upgrade`. See the [APT repository setup guide](docs/apt-repository.md) for the maintainer steps needed before this works.
 
 ## Remove
 

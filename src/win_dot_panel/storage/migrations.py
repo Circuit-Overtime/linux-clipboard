@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from importlib.resources import files
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 REQUIRED_TABLES = frozenset(
     {"metadata", "clipboard_items", "emoji", "emoji_usage", "settings", "emoji_search"}
 )
@@ -56,6 +56,19 @@ def migrate(connection: sqlite3.Connection) -> None:
             row[0]
             for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
         }
+
+    if version == 2:
+        migration = (
+            files("win_dot_panel.storage")
+            .joinpath("migration_003_clipboard_images.sql")
+            .read_text(encoding="utf-8")
+        )
+        try:
+            connection.executescript(f"BEGIN IMMEDIATE;\n{migration}\nCOMMIT;")
+        except sqlite3.Error:
+            connection.rollback()
+            raise
+        version = 3
 
     if version != SCHEMA_VERSION:
         raise UnsupportedSchemaError(

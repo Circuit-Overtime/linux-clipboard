@@ -16,6 +16,8 @@ def _item(row: sqlite3.Row) -> ClipboardItem:
         last_used_at=row["last_used_at"],
         use_count=row["use_count"],
         is_pinned=bool(row["is_pinned"]),
+        content_type=row["content_type"],
+        image_content=row["image_content"],
     )
 
 
@@ -42,24 +44,61 @@ class ClipboardRepository:
                 """,
                 (text, content_hash, timestamp, timestamp),
             )
-            self.connection.execute(
-                """
-                DELETE FROM clipboard_items
-                WHERE is_pinned = 0 AND id NOT IN (
-                    SELECT id FROM clipboard_items
-                    WHERE is_pinned = 0
-                    ORDER BY last_used_at DESC, id DESC
-                    LIMIT ?
-                )
-                """,
-                (history_limit,),
-            )
+            self._trim(history_limit)
         row = self.connection.execute(
             "SELECT * FROM clipboard_items WHERE content_hash = ?", (content_hash,)
         ).fetchone()
         if row is None:
             raise RuntimeError("New clipboard item was removed by retention")
         return _item(row)
+
+    def record_image(
+        self,
+        image: bytes,
+        thumbnail: bytes,
+        content_hash: str,
+        *,
+        timestamp: int,
+        history_limit: int,
+    ) -> ClipboardItem:
+        if not image or not thumbnail:
+            raise ValueError("Clipboard image cannot be empty")
+        if history_limit < 1:
+            raise ValueError("history_limit must be positive")
+        with self.connection:
+            self.connection.execute(
+                """
+                INSERT INTO clipboard_items
+                    (content_type, text_content, image_content, thumbnail_content,
+                     content_hash, created_at, last_used_at)
+                VALUES ('image', '', ?, ?, ?, ?, ?)
+                ON CONFLICT(content_hash) DO UPDATE SET
+                    last_used_at = excluded.last_used_at,
+                    use_count = clipboard_items.use_count + 1
+                """,
+                (image, thumbnail, content_hash, timestamp, timestamp),
+            )
+            self._trim(history_limit)
+        row = self.connection.execute(
+            "SELECT * FROM clipboard_items WHERE content_hash = ?", (content_hash,)
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("New clipboard item was removed by retention")
+        return _item(row)
+
+    def _trim(self, history_limit: int) -> None:
+        self.connection.execute(
+            """
+            DELETE FROM clipboard_items
+            WHERE is_pinned = 0 AND id NOT IN (
+                SELECT id FROM clipboard_items
+                WHERE is_pinned = 0
+                ORDER BY last_used_at DESC, id DESC
+                LIMIT ?
+            )
+            """,
+            (history_limit,),
+        )
 
     def get(self, item_id: int) -> ClipboardItem | None:
         row = self.connection.execute(
@@ -88,7 +127,8 @@ class ClipboardRepository:
         rows = self.connection.execute(
             """
             SELECT id, substr(text_content, 1, 240) AS preview,
-                   length(text_content) AS char_count, use_count, is_pinned
+                   length(text_content) AS char_count, use_count, is_pinned,
+                   content_type, thumbnail_content
             FROM clipboard_items
             WHERE ? = '' OR instr(lower(text_content), lower(?)) > 0
             ORDER BY is_pinned DESC, last_used_at DESC, id DESC
@@ -103,6 +143,8 @@ class ClipboardRepository:
                 char_count=row["char_count"],
                 use_count=row["use_count"],
                 is_pinned=bool(row["is_pinned"]),
+                content_type=row["content_type"],
+                thumbnail_content=row["thumbnail_content"],
             )
             for row in rows
         ]

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QBuffer, QIODevice, QObject, Signal
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
 
 
 class X11ClipboardBackend(QObject):
     clipboard_changed = Signal(str, bool)
+    image_changed = Signal(bytes, str, bool)
 
     def __init__(self) -> None:
         super().__init__()
@@ -15,6 +17,7 @@ class X11ClipboardBackend(QObject):
 
     def start(self) -> bool:
         self.clipboard.dataChanged.connect(self._changed)
+        self._changed()
         return True
 
     def stop(self) -> None:
@@ -31,7 +34,21 @@ class X11ClipboardBackend(QObject):
 
     def _changed(self) -> None:
         mime = self.clipboard.mimeData()
-        if mime is None or not mime.hasText():
+        if mime is None:
             return
         sensitive = mime.hasFormat("application/x-kde-passwordManagerHint")
-        self.clipboard_changed.emit(mime.text(), sensitive)
+        if mime.hasImage():
+            if mime.hasFormat("image/png"):
+                data = bytes(mime.data("image/png"))
+            else:
+                image = mime.imageData()
+                if not isinstance(image, QImage) or image.isNull():
+                    return
+                buffer = QBuffer()
+                buffer.open(QIODevice.OpenModeFlag.WriteOnly)
+                if not image.save(buffer, "PNG"):
+                    return
+                data = bytes(buffer.data())
+            self.image_changed.emit(data, "image/png", sensitive)
+        elif mime.hasText():
+            self.clipboard_changed.emit(mime.text(), sensitive)
