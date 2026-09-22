@@ -58,6 +58,12 @@ def test_symbols_search_category_and_copy_fallback(monkeypatch):
     bar.setValue(bar.maximum())
     app.processEvents()
     assert len(panel.symbols_page.model.records) > PAGE_SIZE
+    for _ in range(20):
+        if len(panel.symbols_page.model.records) == len(SYMBOLS):
+            break
+        bar.setValue(bar.maximum())
+        app.processEvents()
+    assert len(panel.symbols_page.model.records) == len(SYMBOLS)
 
     panel.search.setText("copyright")
     assert panel.symbols_page.model.records[0].value == "©"

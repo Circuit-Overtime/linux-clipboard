@@ -179,6 +179,12 @@ _KAOMOJI_GROUPS = (
     ),
     ("Confused", "Side eye", "doubt skeptical suspicious", "(¬_¬)\n(눈_눈)\n(￢_￢)\n(→_→)\n(←_←)"),
     (
+        "Confused",
+        "Lenny face",
+        "smug mischievous playful",
+        "( ͡° ͜ʖ ͡°)\n( ͡ᵔ ͜ʖ ͡ᵔ )\n( ͠° ͟ʖ ͡°)\n( ͡~ ͜ʖ ͡°)\n( ͡° ͜ʖ ͡°)つ",
+    ),
+    (
         "Gestures",
         "Shrug",
         "whatever dunno shoulders",
