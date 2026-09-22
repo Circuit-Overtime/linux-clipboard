@@ -41,7 +41,7 @@ The check verifies that the wheel contains the local datasets, SQL migrations, P
 
 ## Build a Debian package
 
-The first `.deb` targets Debian 13, which provides the required PySide6 Qt Widgets package. After building and checking the wheel, run:
+The first `.deb` targets Debian 13 and Ubuntu 26.04, which provide the required PySide6 Qt Widgets and Network packages. After building and checking the wheel, run:
 
 ```bash
 python scripts/build_deb.py dist/linux_dot_panel-*.whl
@@ -49,7 +49,7 @@ dpkg-deb --info dist/linux-dot-panel_*.deb
 dpkg-deb --contents dist/linux-dot-panel_*.deb
 ```
 
-The package installs the app for system Python and declares dependencies on `python3-pyside6.qtwidgets`, `python3-gi`, the AT-SPI typelib, and `wl-clipboard`. Install it with `sudo apt install ./dist/linux-dot-panel_*.deb` on a compatible Debian system. It leaves your clipboard database and user configuration untouched; use `linux-dot-panel install` separately to enable login startup. Ubuntu and other distributions should use the wheel until their system packages are verified.
+The package installs the app for system Python and declares dependencies on `python3-pyside6.qtwidgets`, `python3-pyside6.qtnetwork`, `python3-gi`, the AT-SPI typelib, and `wl-clipboard`. Install a specific build with `sudo apt install ./dist/linux-dot-panel_0.1.0-1_all.deb` on a compatible Debian or Ubuntu system. Increase the package revision with `--revision 2` for a changed build of the same app version, then install that new `.deb` as an upgrade. It leaves your clipboard database and user configuration untouched; use `linux-dot-panel install` separately to enable login startup. Other distributions should use the wheel until their system packages are verified.
 
 Clipboard history is stored locally. The application does not use a remote service for its core features.
 

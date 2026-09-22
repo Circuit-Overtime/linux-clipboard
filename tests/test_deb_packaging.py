@@ -29,9 +29,18 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
 
     script = Path(__file__).resolve().parents[1] / "scripts" / "build_deb.py"
     subprocess.run(
-        [sys.executable, str(script), str(wheel), "--output-dir", str(tmp_path)], check=True
+        [
+            sys.executable,
+            str(script),
+            str(wheel),
+            "--output-dir",
+            str(tmp_path),
+            "--revision",
+            "2",
+        ],
+        check=True,
     )
-    package = tmp_path / "linux-dot-panel_0.1.0-1_all.deb"
+    package = tmp_path / "linux-dot-panel_0.1.0-2_all.deb"
     contents = subprocess.check_output(["dpkg-deb", "--contents", str(package)], text=True)
     depends = subprocess.check_output(["dpkg-deb", "--field", str(package), "Depends"], text=True)
     assert "./usr/bin/linux-dot-panel" in contents
@@ -40,3 +49,4 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     assert "-rwxr-xr-x root/root" in contents
     assert "wl-clipboard" in depends
     assert "python3-pyside6.qtwidgets" in depends
+    assert "python3-pyside6.qtnetwork" in depends

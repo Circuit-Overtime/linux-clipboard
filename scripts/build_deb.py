@@ -16,6 +16,7 @@ MODULE = "linux_dot_panel"
 PYTHON_DIR = Path("usr/lib/python3/dist-packages")
 DEPENDENCIES = (
     "python3 (>= 3.10), python3-pyside6.qtwidgets (>= 6.6), "
+    "python3-pyside6.qtnetwork (>= 6.6), "
     "python3-gi, gir1.2-atspi-2.0, wl-clipboard"
 )
 
@@ -61,12 +62,12 @@ def _copy_module(wheel: ZipFile, stage: Path) -> None:
         target.write_bytes(wheel.read(name))
 
 
-def _write_control(stage: Path, version: str) -> None:
+def _write_control(stage: Path, version: str, revision: int) -> None:
     control = stage / "DEBIAN" / "control"
     control.parent.mkdir(parents=True)
     control.write_text(
         f"Package: {PACKAGE}\n"
-        f"Version: {version}-1\n"
+        f"Version: {version}-{revision}\n"
         "Section: utils\n"
         "Priority: optional\n"
         "Architecture: all\n"
@@ -85,10 +86,12 @@ def _set_package_modes(stage: Path) -> None:
     (stage / "usr/bin" / PACKAGE).chmod(0o755)
 
 
-def build_deb(wheel_path: Path, output_dir: Path) -> Path:
+def build_deb(wheel_path: Path, output_dir: Path, *, revision: int = 1) -> Path:
+    if revision < 1:
+        raise ValueError("Debian revision must be positive")
     with ZipFile(wheel_path) as wheel:
         version = _wheel_version(wheel)
-        destination = output_dir / f"{PACKAGE}_{version}-1_all.deb"
+        destination = output_dir / f"{PACKAGE}_{version}-{revision}_all.deb"
         output_dir.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(prefix="linux-dot-panel-deb-") as temporary:
             stage = Path(temporary)
@@ -101,7 +104,7 @@ def build_deb(wheel_path: Path, output_dir: Path) -> Path:
                 "raise SystemExit(main())\n",
                 encoding="utf-8",
             )
-            _write_control(stage, version)
+            _write_control(stage, version, revision)
             _set_package_modes(stage)
             subprocess.run(
                 ["dpkg-deb", "--build", "--root-owner-group", str(stage), str(destination)],
@@ -114,9 +117,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("wheel", type=Path, help="Verified linux-dot-panel .whl file")
     parser.add_argument("--output-dir", type=Path, default=Path("dist"))
+    parser.add_argument("--revision", type=int, default=1, help="Debian package revision")
     args = parser.parse_args()
     try:
-        path = build_deb(args.wheel, args.output_dir)
+        path = build_deb(args.wheel, args.output_dir, revision=args.revision)
     except (OSError, ValueError, BadZipFile, subprocess.CalledProcessError) as error:
         print(f"Debian package build failed: {error}", file=sys.stderr)
         return 1
