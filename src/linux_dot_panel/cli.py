@@ -71,6 +71,11 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("demo", help="Open the popup prototype")
     commands.add_parser("daemon", help="Run the background daemon")
+    install_command = commands.add_parser("install", help="Start the daemon on login")
+    install_command.add_argument(
+        "--method", choices=("xdg", "systemd"), default="xdg", help="Session startup method"
+    )
+    commands.add_parser("uninstall", help="Remove session autostart")
     for command in ("toggle", "show", "hide", "status", "quit"):
         commands.add_parser(command, help=f"Send {command} to the daemon")
     args = parser.parse_args(argv)
@@ -83,6 +88,19 @@ def main(argv: list[str] | None = None) -> int:
         from linux_dot_panel.daemon import run_daemon
 
         return run_daemon()
+    if args.command in ("install", "uninstall"):
+        from linux_dot_panel.desktop.autostart import install, uninstall
+
+        try:
+            if args.command == "install":
+                print(f"Autostart installed: {install(args.method)}")
+            else:
+                removed = uninstall()
+                print("Autostart removed" if removed else "Autostart was not installed")
+        except (OSError, ValueError) as error:
+            print(error, file=sys.stderr)
+            return 1
+        return 0
     if args.command in ("toggle", "show", "hide", "status", "quit"):
         return _run_command(args.command)
 

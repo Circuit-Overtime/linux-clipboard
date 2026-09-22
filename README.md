@@ -22,6 +22,12 @@ linux-dot-panel quit
 
 The desktop shortcut runs `linux-dot-panel toggle`. GNOME or KDE owns that shortcut; the app does not install a global keyboard hook. See [keyboard shortcut setup](docs/shortcuts.md) for the GNOME and Plasma steps, including the absolute command path needed for a virtual environment. `toggle` starts the daemon when needed, while `linux-dot-panel daemon` can run it in a foreground terminal for troubleshooting.
 
+## Start on login
+
+Run `linux-dot-panel install` from the Python environment that runs the app. It creates an XDG autostart entry in your user config directory, so GNOME or KDE starts the daemon at the next login. The entry uses the current Python interpreter's absolute path; run `install` again if you move or recreate the environment. `linux-dot-panel uninstall` removes the entry.
+
+For a systemd user service instead, run `linux-dot-panel install --method systemd`. This writes and enables a service under `~/.config/systemd/user` (or `$XDG_CONFIG_HOME/systemd/user`) for `graphical-session.target`; it starts at the next graphical login. Run `uninstall` before switching methods. Neither install method opens the panel automatically; your desktop shortcut still runs `linux-dot-panel toggle`.
+
 Clipboard history is stored locally. The application does not use a remote service for its core features.
 
 Clipboard monitoring is event driven. On Wayland, a source checkout can run `sh scripts/install-system-deps.sh` to install the required `wl-clipboard` system package with apt, dnf, or pacman; the daemon then runs `wl-paste --watch`. For a wheel install, install `wl-clipboard` with the system package manager separately because pip cannot install OS packages. If `wl-paste` is unavailable, Qt clipboard notifications provide a partial fallback. On X11, Qt clipboard notifications are used directly. The watcher stores text up to 1 MiB, merges duplicates, respects the configured history limit, and skips content marked sensitive by the source.
