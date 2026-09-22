@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter
+from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -65,6 +65,7 @@ class EmojiDelegate(QStyledItemDelegate):
     def __init__(self, dark: bool, parent: QWidget) -> None:
         super().__init__(parent)
         self.dark = dark
+        self.cell_size = CELL_SIZE
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         painter.save()
@@ -84,11 +85,19 @@ class EmojiDelegate(QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
-        return CELL_SIZE
+        return self.cell_size
 
 
 class EmojiGrid(QListView):
     selected = Signal(QModelIndex)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        cell = min(CELL_SIZE.width(), max(40, self.viewport().width() // 8))
+        size = QSize(cell, cell)
+        if self.gridSize() != size:
+            self.setGridSize(size)
+            self.itemDelegate().cell_size = size
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):

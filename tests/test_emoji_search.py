@@ -66,5 +66,10 @@ def test_existing_recent_emoji_order_survives_migration(tmp_path):
     migrated = open_database(path)
     recent = EmojiRepository(migrated).list_recent()
     assert [item.id for item in recent[:2]] == [smile.id, rocket.id]
-    assert migrated.execute("SELECT last_used_at FROM emoji_usage WHERE emoji_id = ?", (smile.id,)).fetchone()[0] == 200000000000
+    assert (
+        migrated.execute(
+            "SELECT last_used_at FROM emoji_usage WHERE emoji_id = ?", (smile.id,)
+        ).fetchone()[0]
+        == 200000000000
+    )
     migrated.close()

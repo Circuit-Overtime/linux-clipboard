@@ -1,11 +1,12 @@
 # Signed APT repository
 
-The product page is published at `https://packages.elixpo.com/`, with stable packages at `https://packages.elixpo.com/apt/`. The release workflow builds a flat APT index from the validated `.deb`, signs its Release file, and deploys it alongside the page through GitHub Pages. Development builds stay on GitHub Releases.
+The product page will be published at `https://packages.elixpo.com/`, with stable packages at `https://packages.elixpo.com/apt/`. The release workflow builds a flat APT index from the validated `.deb`, signs its Release file, and deploys it alongside the page through GitHub Pages. Development builds stay on GitHub Releases.
 
 ## One-time maintainer setup
 
 1. In **Repository Settings → Pages**, select **GitHub Actions** as the build and deployment source and set the custom domain to `packages.elixpo.com`.
 2. At the DNS provider for `elixpo.com`, add a `CNAME` record with **Name/Host** `packages` and **Target/Value** `circuit-overtime.github.io`. Remove any other `A`, `AAAA`, or `CNAME` records for `packages` that conflict with it. GitHub Actions publishing does not need a `CNAME` file in the repository. Allow time for GitHub's DNS check and HTTPS certificate.
+   Optionally verify `elixpo.com` in the **Circuit-Overtime account or organization Pages settings**. GitHub will give you a unique TXT value for `_github-pages-challenge-Circuit-Overtime.elixpo.com`; keep that TXT record after verification.
 3. In **Repository Settings → Environments → github-pages**, allow deployment from `main` and stable tags. Under **Deployment branches and tags**, select **Selected branches and tags** and add a **branch** rule for `main` and a **tag** rule for `v*`. The page is deployed from main; stable releases are deployed from tags.
 4. Create a dedicated signing key outside the repository and save it as the Actions secret `APT_SIGNING_KEY`:
 
