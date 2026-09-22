@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from math import ceil
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, QRect, QSize, Qt, Signal
+from PySide6.QtCore import (
+    QAbstractListModel,
+    QEvent,
+    QModelIndex,
+    QObject,
+    QRect,
+    QSize,
+    Qt,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeyEvent, QPainter
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -95,6 +105,15 @@ class KaomojiDelegate(QStyledItemDelegate):
     def __init__(self, *, dark: bool, parent: QWidget) -> None:
         super().__init__(parent)
         self.dark = dark
+        self.widths: list[int] = []
+
+    @staticmethod
+    def preferred_width(item: TextItem, font: QFont, available: int) -> int:
+        value_font = QFont(font)
+        value_font.setPointSize(15)
+        value_width = QFontMetrics(value_font).horizontalAdvance(item.value)
+        name_width = QFontMetrics(font).horizontalAdvance(item.name)
+        return min(max(116, value_width + 30, name_width + 28), min(420, available))
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         item: TextItem = index.model().records[index.row()]
@@ -133,11 +152,42 @@ class KaomojiDelegate(QStyledItemDelegate):
         font = QFont(option.font)
         font.setPointSize(15)
         value_width = QFontMetrics(font).horizontalAdvance(item.value)
-        name_width = QFontMetrics(option.font).horizontalAdvance(item.name)
         available = max(120, self.parent().viewport().width() - 12)
-        width = min(max(116, value_width + 30, name_width + 28), min(420, available))
+        width = (
+            self.widths[index.row()]
+            if index.row() < len(self.widths)
+            else self.preferred_width(item, option.font, available)
+        )
         lines = ceil(value_width / max(1, width - 28))
         return QSize(width, 60 + (lines - 1) * 25)
+
+
+def justified_kaomoji_widths(
+    records: list[TextItem], viewport_width: int, font: QFont, spacing: int
+) -> list[int]:
+    """Fill each wrapping row while retaining each card's relative width."""
+    # QListView wraps a row whose total reaches the viewport edge exactly.
+    available = max(120, viewport_width - 2 * spacing - 1)
+    widths: list[int] = []
+    row: list[int] = []
+
+    def flush() -> None:
+        if not row:
+            return
+        free = available - sum(row) - spacing * (len(row) - 1)
+        weight = sum(row)
+        stretched = [width + free * width // weight for width in row]
+        stretched[-1] += available - sum(stretched) - spacing * (len(row) - 1)
+        widths.extend(stretched)
+        row.clear()
+
+    for item in records:
+        width = KaomojiDelegate.preferred_width(item, font, available)
+        if row and sum(row) + width + spacing * len(row) > available:
+            flush()
+        row.append(width)
+    flush()
+    return widths
 
 
 class TextPickerPage(QWidget):
@@ -151,6 +201,8 @@ class TextPickerPage(QWidget):
         self.items = KAOMOJI if kind == "Kaomoji" else SYMBOLS
         self.query = ""
         self._matches: list[TextItem] = []
+        self._layout_pending = False
+        self._layout_width = -1
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
@@ -188,7 +240,8 @@ class TextPickerPage(QWidget):
             self.view.setGridSize(QSize(56, 58))
             self.view.setUniformItemSizes(True)
         else:
-            self.view.setItemDelegate(KaomojiDelegate(dark=dark, parent=self.view))
+            self.kaomoji_delegate = KaomojiDelegate(dark=dark, parent=self.view)
+            self.view.setItemDelegate(self.kaomoji_delegate)
             self.view.setViewMode(QListView.ViewMode.IconMode)
             self.view.setFlow(QListView.Flow.LeftToRight)
             self.view.setWrapping(True)
@@ -196,6 +249,7 @@ class TextPickerPage(QWidget):
             self.view.setMovement(QListView.Movement.Static)
             self.view.setSpacing(6)
             self.view.setUniformItemSizes(False)
+            self.view.viewport().installEventFilter(self)
         self.view.clicked.connect(self.select_index)
         self.view.selected.connect(self.select_index)
         self.view.verticalScrollBar().valueChanged.connect(self._maybe_load_more)
@@ -206,6 +260,33 @@ class TextPickerPage(QWidget):
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.empty)
         self.refresh()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if (
+            self.kind == "Kaomoji"
+            and watched is self.view.viewport()
+            and event.type() == QEvent.Type.Resize
+        ):
+            self._schedule_kaomoji_layout()
+        return super().eventFilter(watched, event)
+
+    def _schedule_kaomoji_layout(self) -> None:
+        if self.kind == "Kaomoji" and not self._layout_pending:
+            self._layout_pending = True
+            QTimer.singleShot(0, self._layout_kaomoji)
+
+    def _layout_kaomoji(self) -> None:
+        self._layout_pending = False
+        width = self.view.viewport().width()
+        if width == self._layout_width and len(self.kaomoji_delegate.widths) == len(
+            self.model.records
+        ):
+            return
+        self._layout_width = width
+        self.kaomoji_delegate.widths = justified_kaomoji_widths(
+            self.model.records, width, self.view.font(), self.view.spacing()
+        )
+        self.view.doItemsLayout()
 
     def set_dark(self, dark: bool) -> None:
         self.category.set_dark(dark)
@@ -228,6 +309,9 @@ class TextPickerPage(QWidget):
             )
         ]
         self.model.replace(self._matches[:PAGE_SIZE])
+        if self.kind == "Kaomoji":
+            self._layout_width = -1
+            self._schedule_kaomoji_layout()
         self.view.setVisible(bool(self._matches))
         self.empty.setVisible(not self._matches)
         if self._matches:

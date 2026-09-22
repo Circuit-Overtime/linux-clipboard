@@ -43,6 +43,36 @@ def test_kaomoji_search_and_insert_keeps_panel_open(monkeypatch):
     panel.close()
 
 
+def test_kaomoji_rows_fill_available_width_after_resize_and_filter(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    panel = PopupPanel(Settings())
+    panel.select_tab(2, persist=False)
+    panel.show()
+    view = panel.kaomoji_page.view
+
+    def check_rows() -> None:
+        app.processEvents()
+        app.processEvents()
+        rows: dict[int, list[int]] = {}
+        for row in range(view.model().rowCount()):
+            rect = view.visualRect(view.model().index(row, 0))
+            rows.setdefault(rect.top(), []).append(rect.right() + 1)
+        assert len(rows) > 1
+        assert all(
+            0 <= view.viewport().width() - max(right_edges) <= view.spacing() + 2
+            for right_edges in rows.values()
+        )
+
+    for width in (480, 650, 480):
+        panel.resize(width, 560)
+        check_rows()
+
+    panel.search.setText("happy")
+    check_rows()
+    panel.close()
+
+
 def test_symbols_search_category_and_copy_fallback(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
