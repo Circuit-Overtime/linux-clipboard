@@ -68,6 +68,7 @@ jobs:
 
   pages:
     name: Publish package site and APT repository
+    if: github.ref_type == 'tag'
     needs: [package, publish]
     runs-on: ubuntu-24.04
     permissions:
@@ -90,43 +91,22 @@ jobs:
       - name: Check crawler files
         run: python3 scripts/check_site.py site
       - name: Check APT signing configuration
-        id: signing
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: |
-          if [[ -n "$APT_SIGNING_KEY" ]]; then
-            echo 'enabled=true' >> "$GITHUB_OUTPUT"
-          elif [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+          test -n "$APT_SIGNING_KEY" || {
             echo 'APT_SIGNING_KEY is required for stable releases' >&2
             exit 1
-          else
-            echo 'enabled=false' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Download latest stable package for main builds
-        if: github.ref_type == 'branch' && steps.signing.outputs.enabled == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          stable_tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
-          mkdir -p stable-dist
-          gh release download "$stable_tag" --repo "$GITHUB_REPOSITORY" \
-            -p 'win-dot-panel_*_all.deb' -p 'SHA256SUMS' -D stable-dist
-          (cd stable-dist && sha256sum -c SHA256SUMS)
+          }
       - name: Install repository tools
-        if: steps.signing.outputs.enabled == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev gnupg
       - name: Build signed repository
-        if: steps.signing.outputs.enabled == 'true'
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: |
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            package=(dist/win-dot-panel_*.deb)
-          else
-            package=(stable-dist/win-dot-panel_*.deb)
-          fi
+          package=(dist/win-dot-panel_*.deb)
           test -f "${package[0]}"
           export GNUPGHOME="$RUNNER_TEMP/win-dot-panel-gnupg"
           mkdir -m 700 "$GNUPGHOME"

@@ -36,7 +36,7 @@ Run the repository setup once. Later stable updates use `sudo apt update` follow
 1. In **Repository Settings → Pages**, select **GitHub Actions** as the build and deployment source and set the custom domain to `packages.elixpo.com`.
 2. At the DNS provider for `elixpo.com`, add a `CNAME` record with **Name/Host** `packages` and **Target/Value** `circuit-overtime.github.io`. Remove any other `A`, `AAAA`, or `CNAME` records for `packages` that conflict with it. GitHub Actions publishing does not need a `CNAME` file in the repository. Allow time for GitHub's DNS check and HTTPS certificate.
    Optionally verify `elixpo.com` in the **Circuit-Overtime account or organization Pages settings**. GitHub will give you a unique TXT value for `_github-pages-challenge-Circuit-Overtime.elixpo.com`; keep that TXT record after verification.
-3. In **Repository Settings → Environments → github-pages**, allow deployment from `main` and stable tags. Under **Deployment branches and tags**, select **Selected branches and tags** and add a **branch** rule for `main` and a **tag** rule for `v*`. The page is deployed from main; stable releases are deployed from tags.
+3. In **Repository Settings → Environments → github-pages**, allow stable tags. Under **Deployment branches and tags**, select **Selected branches and tags** and add a **tag** rule for `v*`. Stable release tags deploy the product page and signed APT repository together.
 4. Create a dedicated signing key outside the repository and save it as the Actions secret `APT_SIGNING_KEY`:
 
    ```bash
@@ -51,6 +51,6 @@ Run the repository setup once. Later stable updates use `sudo apt update` follow
    ```
 
    Keep a secure backup of that directory. The private key must never be committed to Git.
-5. Push to `main` to deploy the product page. Once the signing key exists, the workflow also publishes the latest stable package to APT. Push a new stable `v<project-version>-<revision>` tag, such as `v1.0.0-1`, to publish that validated package as a GitHub release and update the signed repository. Confirm that the homepage, `/apt/InRelease`, `/apt/Packages.gz`, the `.deb`, and `/apt/keyring.asc` are available before relying on APT installation.
+5. Push to `main` to validate the package and publish a development build. Push a new stable `v<project-version>-<revision>` tag, such as `v1.0.0-1`, to publish that validated package as a GitHub release and deploy the product page and signed repository. Confirm that the homepage, `/apt/InRelease`, `/apt/Packages.gz`, the `.deb`, and `/apt/keyring.asc` are available before relying on APT installation.
 
 The GitHub updater command remains available for development builds.
