@@ -28,6 +28,17 @@ Run `linux-dot-panel install` from the Python environment that runs the app. It 
 
 For a systemd user service instead, run `linux-dot-panel install --method systemd`. This writes and enables a service under `~/.config/systemd/user` (or `$XDG_CONFIG_HOME/systemd/user`) for `graphical-session.target`; it starts at the next graphical login. Run `uninstall` before switching methods. Neither install method opens the panel automatically; your desktop shortcut still runs `linux-dot-panel toggle`.
 
+## Build a wheel
+
+From an environment with `pip` and `setuptools` installed, build without downloading dependencies:
+
+```bash
+python -m pip wheel --no-deps --no-build-isolation --no-index --wheel-dir dist .
+python scripts/check-wheel.py dist/linux_dot_panel-*.whl
+```
+
+The check verifies that the wheel contains the local datasets, SQL migrations, PySide6 dependency metadata, and `linux-dot-panel` entry point. Install the wheel into a Python environment with `python -m pip install dist/linux_dot_panel-*.whl`; pip handles Python dependencies, while `wl-clipboard` remains a separate system package on Wayland. The wheel does not create an autostart entry until you run `linux-dot-panel install`.
+
 Clipboard history is stored locally. The application does not use a remote service for its core features.
 
 Clipboard monitoring is event driven. On Wayland, a source checkout can run `sh scripts/install-system-deps.sh` to install the required `wl-clipboard` system package with apt, dnf, or pacman; the daemon then runs `wl-paste --watch`. For a wheel install, install `wl-clipboard` with the system package manager separately because pip cannot install OS packages. If `wl-paste` is unavailable, Qt clipboard notifications provide a partial fallback. On X11, Qt clipboard notifications are used directly. The watcher stores text up to 1 MiB, merges duplicates, respects the configured history limit, and skips content marked sensitive by the source.
