@@ -68,6 +68,16 @@ def _start_daemon() -> None:
 
 
 def _run_command(command: str) -> int:
+    if command == "start":
+        try:
+            send_command("status", timeout=0.1)
+        except OSError:
+            try:
+                _start_daemon()
+            except (OSError, RuntimeError) as error:
+                print(error, file=sys.stderr)
+                return 1
+        return 0
     if command in ("toggle", "toggle-clipboard"):
         try:
             response = send_command(command)
@@ -109,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("demo", help="Open the popup prototype")
     commands.add_parser("daemon", help="Run the background daemon")
+    commands.add_parser("start", help="Start the background daemon if needed")
     install_command = commands.add_parser("install", help="Start the daemon on login")
     install_command.add_argument(
         "--method", choices=("xdg", "systemd"), default="xdg", help="Session startup method"
@@ -159,7 +170,15 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(f"Installed {tag}. The next shortcut press will start the updated app.")
         return 0
-    if args.command in ("toggle", "toggle-clipboard", "show", "hide", "status", "quit"):
+    if args.command in (
+        "start",
+        "toggle",
+        "toggle-clipboard",
+        "show",
+        "hide",
+        "status",
+        "quit",
+    ):
         return _run_command(args.command)
 
     parser.print_help()

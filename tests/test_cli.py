@@ -29,3 +29,23 @@ def test_system_package_version_includes_debian_revision(monkeypatch, capsys):
 
     assert result.value.code == 0
     assert capsys.readouterr().out == "win-dot-panel 1.0.0-1\n"
+
+
+def test_start_is_idempotent_when_daemon_is_running(monkeypatch):
+    commands = []
+    monkeypatch.setattr(cli, "send_command", lambda command, **kwargs: commands.append(command))
+    monkeypatch.setattr(cli, "_start_daemon", lambda: pytest.fail("daemon was restarted"))
+
+    assert cli.main(["start"]) == 0
+    assert commands == ["status"]
+
+
+def test_start_launches_daemon_when_stopped(monkeypatch):
+    monkeypatch.setattr(
+        cli, "send_command", lambda command, **kwargs: (_ for _ in ()).throw(OSError())
+    )
+    started = []
+    monkeypatch.setattr(cli, "_start_daemon", lambda: started.append(True))
+
+    assert cli.main(["start"]) == 0
+    assert started == [True]

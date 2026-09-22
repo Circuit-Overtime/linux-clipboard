@@ -140,6 +140,32 @@ def _write_postinst(stage: Path) -> None:
         "#!/bin/sh\n"
         "set -e\n"
         'if [ "$1" = configure ]; then\n'
+        '    install_uid="${SUDO_UID:-${PKEXEC_UID:-}}"\n'
+        '    case "$install_uid" in\n'
+        "        ''|*[!0-9]*|0) started=false ;;\n"
+        "        *)\n"
+        '            install_user=$(getent passwd "$install_uid" | cut -d: -f1)\n'
+        '            runtime_dir="/run/user/$install_uid"\n'
+        '            if [ -n "$install_user" ] && [ -d "$runtime_dir" ]; then\n'
+        '                if runuser -u "$install_user" -- env \\\n'
+        '                    XDG_RUNTIME_DIR="$runtime_dir" \\\n'
+        '                    DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus" \\\n'
+        "                    /usr/bin/win-dot-panel quit >/dev/null 2>&1; then\n"
+        "                    sleep 1\n"
+        "                fi\n"
+        '                if runuser -u "$install_user" -- env \\\n'
+        '                    XDG_RUNTIME_DIR="$runtime_dir" \\\n'
+        '                    DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus" \\\n'
+        "                    /usr/bin/win-dot-panel start >/dev/null 2>&1; then\n"
+        "                    started=true\n"
+        "                else\n"
+        "                    started=false\n"
+        "                fi\n"
+        "            else\n"
+        "                started=false\n"
+        "            fi\n"
+        "            ;;\n"
+        "    esac\n"
         "    cat <<'HELP'\n"
         "\n"
         "Win Dot Panel is installed. Set these desktop keyboard shortcuts:\n"
@@ -150,6 +176,22 @@ def _write_postinst(stage: Path) -> None:
         "Shortcut help: https://packages.elixpo.com/#shortcuts\n"
         "\n"
         "HELP\n"
+        '    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then\n'
+        "        green=$(printf '\\033[1;32m')\n"
+        "        soft_green=$(printf '\\033[0;32m')\n"
+        "        reset=$(printf '\\033[0m')\n"
+        "    else\n"
+        '        green=""\n'
+        '        soft_green=""\n'
+        '        reset=""\n'
+        "    fi\n"
+        '    printf "%s✓ Win Dot Panel installed — your clipboard, one shortcut away.%s\\n" "$green" "$reset"\n'
+        '    if [ "$started" = true ]; then\n'
+        '        printf "%sClipboard history is running for %s.%s\\n" "$soft_green" "$install_user" "$reset"\n'
+        "    else\n"
+        '        printf "%sLog out and log back in once to activate clipboard history.%s\\n" "$soft_green" "$reset"\n'
+        "    fi\n"
+        '    printf "%sIf clipboard history stays empty, log out and log back in once.%s\\n" "$soft_green" "$reset"\n'
         "fi\n"
         "exit 0\n",
         encoding="utf-8",

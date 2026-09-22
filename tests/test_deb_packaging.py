@@ -88,6 +88,13 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     assert "Super + .  ->  /usr/bin/win-dot-panel toggle" in message
     assert "Super + V  ->  /usr/bin/win-dot-panel toggle-clipboard" in message
     assert "https://packages.elixpo.com/#shortcuts" in message
+    assert "Win Dot Panel installed — your clipboard, one shortcut away" in message
+    assert "Log out and log back in once to activate clipboard history" in message
+    assert "If clipboard history stays empty, log out and log back in once" in message
+    postinst_text = postinst.read_text()
+    assert "/usr/bin/win-dot-panel quit" in postinst_text
+    assert "/usr/bin/win-dot-panel start" in postinst_text
+    assert 'install_uid="${SUDO_UID:-${PKEXEC_UID:-}}"' in postinst_text
 
     subprocess.run(
         [

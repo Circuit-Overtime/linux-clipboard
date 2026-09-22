@@ -40,7 +40,7 @@ The installer prints the shortcut commands and adds an app-menu launcher. `/usr/
 
 ## Open the panel
 
-Run `/usr/bin/win-dot-panel toggle` to show or hide it. New packages start the background app when you sign in, so the panel opens quickly and clipboard history stays available. For an older package, run `/usr/bin/win-dot-panel install` once to enable login startup.
+Run `/usr/bin/win-dot-panel toggle` to show or hide it. Installation through `sudo apt` starts clipboard history immediately for the current desktop user. The package also starts the background app at future sign-ins, so the panel opens quickly and clipboard history stays available. For an older package, run `/usr/bin/win-dot-panel install` once to enable login startup.
 
 To open it with **Super + .**, add `/usr/bin/win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. Assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. The shortcut also starts the app if it is not already running.
 
