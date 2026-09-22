@@ -13,20 +13,25 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     if shutil.which("dpkg-deb") is None:
         pytest.skip("dpkg-deb is unavailable")
     wheel = tmp_path / "win_dot_panel-0.1.0-py3-none-any.whl"
+    icon = (Path(__file__).resolve().parents[1] / "web" / "favicon.png").read_bytes()
     with ZipFile(wheel, "w") as archive:
         for name in (
             "win_dot_panel/__init__.py",
             "win_dot_panel/cli.py",
             "win_dot_panel/resources/emoji.json",
+            "win_dot_panel/resources/icon.png",
             "win_dot_panel/resources/UNICODE-LICENSE.txt",
             "win_dot_panel/storage/schema.sql",
         ):
-            archive.writestr(
-                name,
-                "UNICODE LICENSE V3\nCopyright Unicode, Inc.\n"
-                if name.endswith("UNICODE-LICENSE.txt")
-                else "",
-            )
+            if name.endswith("icon.png"):
+                archive.writestr(name, icon)
+            else:
+                archive.writestr(
+                    name,
+                    "UNICODE LICENSE V3\nCopyright Unicode, Inc.\n"
+                    if name.endswith("UNICODE-LICENSE.txt")
+                    else "",
+                )
         archive.writestr(
             "win_dot_panel-0.1.0.dist-info/METADATA",
             "Metadata-Version: 2.1\nName: win-dot-panel\nVersion: 0.1.0\n",
@@ -52,6 +57,8 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     assert "./usr/bin/win-dot-panel" in contents
     assert "./usr/lib/python3/dist-packages/win_dot_panel/resources/emoji.json" in contents
     assert "./usr/share/doc/win-dot-panel/copyright" in contents
+    assert "./usr/share/applications/win-dot-panel.desktop" in contents
+    assert "./usr/share/icons/hicolor/512x512/apps/win-dot-panel.png" in contents
     assert "drwxr-xr-x root/root" in contents
     assert "-rwxr-xr-x root/root" in contents
     assert "wl-clipboard" in depends
@@ -62,6 +69,10 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     copyright_text = (unpacked / "usr/share/doc/win-dot-panel/copyright").read_text()
     assert "MIT License" in copyright_text
     assert "UNICODE LICENSE V3\nCopyright Unicode, Inc." in copyright_text
+    desktop = (unpacked / "usr/share/applications/win-dot-panel.desktop").read_text()
+    assert "Exec=/usr/bin/win-dot-panel toggle\n" in desktop
+    assert "Icon=win-dot-panel\n" in desktop
+    assert (unpacked / "usr/share/icons/hicolor/512x512/apps/win-dot-panel.png").read_bytes() == icon
 
     subprocess.run(
         [

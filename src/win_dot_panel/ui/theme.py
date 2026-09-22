@@ -54,6 +54,23 @@ def stylesheet(dark: bool) -> str:
         border-radius: 20px;
     }
     QFrame#dragGrip { background: $border; border: none; border-radius: 2px; }
+    QFrame#shortcutTip {
+        background: $field;
+        border: 1px solid $border;
+        border-radius: 11px;
+    }
+    QLabel#shortcutTipText { color: $text; font-size: 12px; }
+    QPushButton#shortcutHelp, QPushButton#shortcutDismiss {
+        color: $accent;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        padding: 4px 5px;
+        font-size: 12px;
+    }
+    QPushButton#shortcutHelp:hover, QPushButton#shortcutDismiss:hover { background: $selected; }
+    QPushButton#shortcutHelp:focus, QPushButton#shortcutDismiss:focus { border-color: $accent; }
+    QPushButton#shortcutDismiss { color: $muted; font-size: 17px; }
     QLabel#subtitle, QLabel#hint, QLabel#emptyCaption { color: $muted; }
     QLabel#emptyTitle { color: $text; font-size: 18px; font-weight: 600; }
     QLabel#emptyIcon { color: $accent; font-size: 38px; }

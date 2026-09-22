@@ -4,9 +4,9 @@ import os
 
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QPushButton
 
-from win_dot_panel.config import Settings
+from win_dot_panel.config import Settings, config_path
 from win_dot_panel.ui.platform import configure_window_platform
 from win_dot_panel.ui.popup import PopupPanel, position_near_cursor
 
@@ -47,3 +47,24 @@ def test_popup_can_be_dragged_by_handle(monkeypatch):
 
     assert panel.pos() == original + QPoint(40, 30)
     panel.close()
+
+
+def test_shortcut_tip_stays_until_dismissed(monkeypatch, tmp_path):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    app = QApplication.instance() or QApplication([])
+    panel = PopupPanel(Settings())
+    panel.show()
+    app.processEvents()
+
+    assert panel.shortcut_tip.isVisible()
+    panel.shortcut_tip.findChild(QPushButton, "shortcutDismiss").click()
+    assert not panel.shortcut_tip.isVisible()
+    assert Settings.load(config_path()).shortcut_tip_dismissed
+    panel.close()
+
+    reopened = PopupPanel(Settings.load(config_path()))
+    reopened.show()
+    app.processEvents()
+    assert not reopened.shortcut_tip.isVisible()
+    reopened.close()

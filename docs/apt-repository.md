@@ -1,6 +1,6 @@
 # Signed APT repository
 
-The product page will be published at `https://packages.elixpo.com/`, with stable packages at `https://packages.elixpo.com/apt/`. The release workflow builds a flat APT index from the validated `.deb`, signs its Release file, and deploys it alongside the page through GitHub Pages. Development builds stay on GitHub Releases.
+The product page is published at `https://packages.elixpo.com/`, with stable packages at `https://packages.elixpo.com/apt/`. The release workflow builds a flat APT index from the validated `.deb`, signs its Release file, and deploys it alongside the page through GitHub Pages. Development builds stay on GitHub Releases.
 
 ## One-time maintainer setup
 

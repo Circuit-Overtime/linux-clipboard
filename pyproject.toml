@@ -24,7 +24,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "win_dot_panel.storage" = ["*.sql"]
-"win_dot_panel.resources" = ["emoji.json", "UNICODE-LICENSE.txt"]
+"win_dot_panel.resources" = ["emoji.json", "icon.png", "UNICODE-LICENSE.txt"]
 
 [tool.ruff]
 target-version = "py310"

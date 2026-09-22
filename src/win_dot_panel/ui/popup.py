@@ -14,9 +14,19 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     QTimer,
+    QUrl,
     Signal,
 )
-from PySide6.QtGui import QColor, QCursor, QKeyEvent, QKeySequence, QMouseEvent, QPalette, QShortcut
+from PySide6.QtGui import (
+    QColor,
+    QCursor,
+    QDesktopServices,
+    QKeyEvent,
+    QKeySequence,
+    QMouseEvent,
+    QPalette,
+    QShortcut,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -41,6 +51,7 @@ from win_dot_panel.ui.pages.text_picker_page import TextPickerPage
 from win_dot_panel.ui.theme import is_dark, stylesheet
 
 LOGGER = logging.getLogger(__name__)
+SHORTCUT_HELP_URL = QUrl("https://packages.elixpo.com/#shortcuts")
 
 
 PAGE_TEXT = {
@@ -168,6 +179,32 @@ class PopupPanel(QWidget):
             self.pages.addWidget(page)
         content.addWidget(self.pages, 1)
 
+        self.shortcut_tip = QFrame()
+        self.shortcut_tip.setObjectName("shortcutTip")
+        self.shortcut_tip.setAccessibleName("Shortcut setup tip")
+        tip_layout = QHBoxLayout(self.shortcut_tip)
+        tip_layout.setContentsMargins(12, 8, 10, 8)
+        tip_layout.setSpacing(8)
+        tip_text = QLabel("Set Super + . for emoji and Super + V for clipboard")
+        tip_text.setObjectName("shortcutTipText")
+        tip_text.setWordWrap(True)
+        tip_layout.addWidget(tip_text, 1)
+        help_button = QPushButton("Help ↗")
+        help_button.setObjectName("shortcutHelp")
+        help_button.setAccessibleName("Open shortcut setup help")
+        help_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        help_button.clicked.connect(lambda: QDesktopServices.openUrl(SHORTCUT_HELP_URL))
+        tip_layout.addWidget(help_button)
+        dismiss_button = QPushButton("×")
+        dismiss_button.setObjectName("shortcutDismiss")
+        dismiss_button.setAccessibleName("Dismiss shortcut setup tip")
+        dismiss_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        dismiss_button.clicked.connect(self._dismiss_shortcut_tip)
+        tip_layout.addWidget(dismiss_button)
+        content.addWidget(self.shortcut_tip)
+        if settings.shortcut_tip_dismissed:
+            self.shortcut_tip.hide()
+
         self.search.textChanged.connect(self._search_changed)
         self.search.returnPressed.connect(self._select_search_result)
         if self.emoji_page is not None:
@@ -214,6 +251,14 @@ class PopupPanel(QWidget):
             self.clipboard_page.set_dark(dark)
         self.kaomoji_page.set_dark(dark)
         self.symbols_page.set_dark(dark)
+
+    def _dismiss_shortcut_tip(self) -> None:
+        self.shortcut_tip.hide()
+        self.settings.shortcut_tip_dismissed = True
+        try:
+            self.settings.save()
+        except OSError as error:
+            LOGGER.warning("Could not save settings: %s", error)
 
     def _empty_page(self, name: str) -> QWidget:
         page = QWidget()

@@ -45,6 +45,7 @@ def _copy_module(wheel: ZipFile, stage: Path) -> None:
         f"{MODULE}/__init__.py",
         f"{MODULE}/cli.py",
         f"{MODULE}/resources/emoji.json",
+        f"{MODULE}/resources/icon.png",
         f"{MODULE}/resources/UNICODE-LICENSE.txt",
         f"{MODULE}/storage/schema.sql",
     }
@@ -97,6 +98,28 @@ def _write_copyright(stage: Path, wheel: ZipFile) -> None:
     )
 
 
+def _write_desktop_integration(stage: Path, wheel: ZipFile) -> None:
+    launcher = stage / "usr/share/applications" / f"{PACKAGE}.desktop"
+    launcher.parent.mkdir(parents=True, exist_ok=True)
+    launcher.write_text(
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=Win Dot Panel\n"
+        "Comment=Emoji and clipboard panel\n"
+        "Exec=/usr/bin/win-dot-panel toggle\n"
+        "TryExec=/usr/bin/win-dot-panel\n"
+        "Icon=win-dot-panel\n"
+        "Terminal=false\n"
+        "StartupNotify=false\n"
+        "Categories=Utility;\n"
+        "Keywords=Emoji;Clipboard;Kaomoji;Symbols;\n",
+        encoding="utf-8",
+    )
+    icon = stage / "usr/share/icons/hicolor/512x512/apps" / f"{PACKAGE}.png"
+    icon.parent.mkdir(parents=True, exist_ok=True)
+    icon.write_bytes(wheel.read(f"{MODULE}/resources/icon.png"))
+
+
 def _set_package_modes(stage: Path) -> None:
     stage.chmod(0o755)
     for path in stage.rglob("*"):
@@ -130,6 +153,7 @@ def build_deb(
             )
             _write_control(stage, version, revision)
             _write_copyright(stage, wheel)
+            _write_desktop_integration(stage, wheel)
             _set_package_modes(stage)
             subprocess.run(
                 ["dpkg-deb", "--build", "--root-owner-group", str(stage), str(destination)],

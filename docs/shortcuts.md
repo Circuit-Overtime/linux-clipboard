@@ -1,16 +1,18 @@
 # Keyboard shortcut setup
 
-Win Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `win-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
+Win Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `/usr/bin/win-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
 
-For a separate clipboard shortcut, assign **Super + V** to `win-dot-panel toggle-clipboard`. It opens the Clipboard tab, switches to it from another tab, or closes the panel when Clipboard is already open.
+For a separate clipboard shortcut, assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard`. It opens the Clipboard tab, switches to it from another tab, or closes the panel when Clipboard is already open.
 
 ## Choose the command
 
-For an installed executable available to the desktop session, use:
+For the APT-installed package, use:
 
 ```text
-win-dot-panel toggle
+/usr/bin/win-dot-panel toggle
 ```
+
+Use `/usr/bin/win-dot-panel toggle-clipboard` for the Clipboard shortcut. These absolute paths also work when a development virtual environment is active in your terminal.
 
 For a development install inside this repository's `.venv`, find the executable's absolute path while the environment is active:
 

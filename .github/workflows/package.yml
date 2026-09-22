@@ -66,6 +66,8 @@ jobs:
           dpkg-deb --extract "$package" extracted
           test -x extracted/usr/bin/win-dot-panel
           test -f extracted/usr/lib/python3/dist-packages/win_dot_panel/resources/emoji.json
+          test -f extracted/usr/share/applications/win-dot-panel.desktop
+          test -f extracted/usr/share/icons/hicolor/512x512/apps/win-dot-panel.png
           test -f extracted/usr/lib/python3/dist-packages/win_dot_panel/storage/schema.sql
           test -f extracted/usr/share/doc/win-dot-panel/copyright
           PYTHONPATH="$PWD/extracted/usr/lib/python3/dist-packages" extracted/usr/bin/win-dot-panel --help

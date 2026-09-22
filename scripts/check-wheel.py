@@ -15,6 +15,7 @@ REQUIRED = {
     "win_dot_panel/daemon.py",
     "win_dot_panel/desktop/autostart.py",
     "win_dot_panel/resources/emoji.json",
+    "win_dot_panel/resources/icon.png",
     "win_dot_panel/resources/UNICODE-LICENSE.txt",
     "win_dot_panel/storage/schema.sql",
     "win_dot_panel/storage/migration_002_emoji_fts.sql",

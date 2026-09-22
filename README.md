@@ -15,49 +15,7 @@ Your clipboard history stays on your computer.
 
 ## Install
 
-The Debian package is available for Debian 13 and Ubuntu 26.04. Copy these commands into a terminal to install the [current release](https://github.com/Circuit-Overtime/linux-clipboard/releases/tag/v0.1.0-3):
-
-```bash
-curl -fL -o /var/tmp/win-dot-panel_0.1.0-3_all.deb https://github.com/Circuit-Overtime/linux-clipboard/releases/download/v0.1.0-3/win-dot-panel_0.1.0-3_all.deb
-chmod 644 /var/tmp/win-dot-panel_0.1.0-3_all.deb
-sudo apt install /var/tmp/win-dot-panel_0.1.0-3_all.deb
-```
-
-The release page also provides a checksum file if you want to verify the download. For other Linux distributions, see the [developer guide](docs/development.md) for the Python package.
-
-## Open the panel
-
-Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once.
-
-To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. You can also assign **Super + V** to `win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. Run `win-dot-panel install` once to record copies while the panel is closed; the shortcut also starts the app if it is not already running.
-
-The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
-
-## Update
-
-After a new stable release is published, run:
-
-```bash
-/usr/bin/win-dot-panel update
-```
-
-The updater downloads the package from GitHub, checks its SHA-256 checksum, asks APT to install it, and restarts the app on your next shortcut press. To try the newest development build instead, run `/usr/bin/win-dot-panel update --channel main`.
-
-The current `0.1.0-3` package does not yet have the updater. For this first update, or whenever you prefer to install a GitHub release yourself, use these commands. They select the newest published release, including development builds, and require the GitHub CLI (`gh`):
-
-```bash
-tag=$(gh release list -R Circuit-Overtime/linux-clipboard \
-  --limit 1 --json tagName --jq '.[0].tagName')
-gh release download "$tag" -R Circuit-Overtime/linux-clipboard \
-  -p 'win-dot-panel_*_all.deb' -O /var/tmp/win-dot-panel.deb --clobber
-chmod 644 /var/tmp/win-dot-panel.deb
-sudo apt install --allow-downgrades /var/tmp/win-dot-panel.deb
-/usr/bin/win-dot-panel quit
-```
-
-The last command stops any older background process. If it says the daemon is not running, the install is still complete.
-
-APT cannot discover new packages from a GitHub Releases page by itself. Other apps make `sudo apt update && sudo apt upgrade` work by publishing a signed APT repository. We are preparing one at [packages.elixpo.com](https://packages.elixpo.com/). **Check that the site's APT status says it is live before using these commands.** Then add it once with:
+The Debian package is available for Debian 13 and Ubuntu 26.04. Add the signed APT repository once, then install with your normal package manager:
 
 ```bash
 sudo install -d -m 755 /etc/apt/keyrings
@@ -71,7 +29,29 @@ sudo apt update
 sudo apt install win-dot-panel
 ```
 
-Then update stable releases with `sudo apt update && sudo apt upgrade`. See the [APT repository setup guide](docs/apt-repository.md) for the maintainer steps needed before this works.
+The same steps are on [packages.elixpo.com](https://packages.elixpo.com/). If you prefer a standalone package, get the latest stable `.deb` from [GitHub Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest). For other Linux distributions, see the [developer guide](docs/development.md).
+
+## Open the panel
+
+Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once.
+
+To open it with **Super + .**, add `/usr/bin/win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. Assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. Run `/usr/bin/win-dot-panel install` once to record copies while the panel is closed; the shortcut also starts the app if it is not already running.
+
+The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
+
+## Update
+
+With the APT repository configured, run:
+
+```bash
+sudo apt update
+sudo apt install --only-upgrade win-dot-panel
+/usr/bin/win-dot-panel quit
+```
+
+The last command closes any older background process; the next shortcut press starts the updated app. A message saying the daemon is not running is harmless. Normal system upgrades also include new stable versions. To try a development build from GitHub Releases instead, run `/usr/bin/win-dot-panel update --channel main`.
+
+If you installed the older `0.1.0-3` package manually, these APT setup steps also switch you to repository updates when the next stable version is published. Check `apt-cache policy win-dot-panel` to see the installed and available versions.
 
 ## Remove
 

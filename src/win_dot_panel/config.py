@@ -20,6 +20,7 @@ class Settings:
     last_tab: str = "Emoji"
     theme: str = "system"
     history_limit: int = 500
+    shortcut_tip_dismissed: bool = False
 
     @classmethod
     def load(cls, path: Path | None = None) -> Settings:
@@ -33,6 +34,7 @@ class Settings:
             last_tab=data.get("last_tab", "Emoji"),
             theme=data.get("theme", "system"),
             history_limit=data.get("history_limit", 500),
+            shortcut_tip_dismissed=data.get("shortcut_tip_dismissed", False),
         )
         settings.validate()
         return settings
@@ -44,6 +46,8 @@ class Settings:
             raise ValueError(f"Unknown theme: {self.theme}")
         if type(self.history_limit) is not int or self.history_limit < 1:
             raise ValueError("history_limit must be a positive integer")
+        if type(self.shortcut_tip_dismissed) is not bool:
+            raise ValueError("shortcut_tip_dismissed must be a boolean")
 
     def save(self, path: Path | None = None) -> None:
         self.validate()
