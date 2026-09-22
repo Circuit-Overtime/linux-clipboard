@@ -2,6 +2,35 @@
 
 The product page is published at `https://packages.elixpo.com/`, with stable packages at `https://packages.elixpo.com/apt/`. The release workflow builds a flat APT index from the validated `.deb`, signs its Release file, and deploys it alongside the page through GitHub Pages. Development builds stay on GitHub Releases.
 
+## Quick install
+
+```bash
+curl -fsSL -o /var/tmp/win-dot-panel-install.sh https://packages.elixpo.com/install.sh && bash /var/tmp/win-dot-panel-install.sh
+```
+
+This checks the repository key fingerprint, registers the signed APT source, and installs the latest stable package. The current signing key fingerprint is `1D7C BFA8 E3D9 599C 7CA0 3B86 EEEA 89F4 C2DB 5DE5`. If `curl` is missing, install it first with `sudo apt install curl`.
+
+## Manual setup
+
+Run these commands if you want to add the APT source yourself:
+
+```bash
+sudo apt update
+sudo apt install curl gnupg
+sudo install -d -m 755 /etc/apt/keyrings
+curl -fsSL -o /var/tmp/win-dot-panel-apt.asc \
+  https://packages.elixpo.com/apt/keyring.asc
+sudo gpg --dearmor --yes -o /etc/apt/keyrings/win-dot-panel.gpg \
+  /var/tmp/win-dot-panel-apt.asc
+echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://packages.elixpo.com/apt/ ./' | \
+  sudo tee /etc/apt/sources.list.d/win-dot-panel.list
+sudo apt update
+sudo apt install win-dot-panel
+apt-cache policy win-dot-panel
+```
+
+Run the repository setup once. Later stable updates use `sudo apt update` followed by `sudo apt install --only-upgrade win-dot-panel`. The key is scoped to this repository through `signed-by`; it is not added to APT's global trusted keyring.
+
 ## One-time maintainer setup
 
 1. In **Repository Settings → Pages**, select **GitHub Actions** as the build and deployment source and set the custom domain to `packages.elixpo.com`.
@@ -22,23 +51,6 @@ The product page is published at `https://packages.elixpo.com/`, with stable pac
    ```
 
    Keep a secure backup of that directory. The private key must never be committed to Git.
-5. Push to `main` to deploy the product page. Once the signing key exists, the workflow also publishes the latest stable package to APT. Push a new stable `v<project-version>-<revision>` tag to publish that validated package as a GitHub release and update the signed repository. Confirm that the homepage, `/apt/InRelease`, `/apt/Packages.gz`, the `.deb`, and `/apt/keyring.asc` are available before relying on APT installation.
+5. Push to `main` to deploy the product page. Once the signing key exists, the workflow also publishes the latest stable package to APT. Push a new stable `v<project-version>-<revision>` tag, such as `v1.0.0-1`, to publish that validated package as a GitHub release and update the signed repository. Confirm that the homepage, `/apt/InRelease`, `/apt/Packages.gz`, the `.deb`, and `/apt/keyring.asc` are available before relying on APT installation.
 
-## Install from APT
-
-```bash
-sudo apt update
-sudo apt install curl gnupg
-sudo install -d -m 755 /etc/apt/keyrings
-curl -fsSL -o /var/tmp/win-dot-panel-apt.asc \
-  https://packages.elixpo.com/apt/keyring.asc
-sudo gpg --dearmor --yes -o /etc/apt/keyrings/win-dot-panel.gpg \
-  /var/tmp/win-dot-panel-apt.asc
-echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://packages.elixpo.com/apt/ ./' |
-  sudo tee /etc/apt/sources.list.d/win-dot-panel.list
-sudo apt update
-sudo apt install win-dot-panel
-apt-cache policy win-dot-panel
-```
-
-Run the repository setup once. Later stable updates use `sudo apt update` followed by `sudo apt install --only-upgrade win-dot-panel`. The key is scoped to this repository through `signed-by`; it is not added to APT's global trusted keyring. The GitHub updater command remains available for development builds.
+The GitHub updater command remains available for development builds.

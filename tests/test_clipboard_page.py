@@ -12,7 +12,7 @@ from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRep
 from win_dot_panel.ui.popup import PopupPanel
 
 
-def test_clipboard_page_search_manage_copy_and_pagination(tmp_path, monkeypatch):
+def test_clipboard_page_search_manage_and_pagination(tmp_path, monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     connection = open_database(tmp_path / "panel.db")
@@ -35,12 +35,10 @@ def test_clipboard_page_search_manage_copy_and_pagination(tmp_path, monkeypatch)
     page.list.setCurrentIndex(page.model.index(0, 0))
     page.toggle_pin()
     assert repository.get(item_id).is_pinned
-    assert page.pin_button.text() == "Unpin"
+    assert not hasattr(page, "pin_button")
 
-    panel.show()
-    page.copy_button.click()
+    page.copy_current()
     assert app.clipboard().text() == "note 17"
-    assert not panel.isVisible()
 
     page.set_query("note 18")
     page.list.setCurrentIndex(page.model.index(0, 0))
@@ -58,7 +56,7 @@ def test_clipboard_page_search_manage_copy_and_pagination(tmp_path, monkeypatch)
     connection.close()
 
 
-def test_clipboard_page_copies_full_text_after_loading_only_a_preview(tmp_path, monkeypatch):
+def test_clipboard_page_inserts_full_text_after_loading_only_a_preview(tmp_path, monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     connection = open_database(tmp_path / "panel.db")
@@ -72,13 +70,16 @@ def test_clipboard_page_copies_full_text_after_loading_only_a_preview(tmp_path, 
     assert len(page.model.records[0].preview) == 240
     page.set_query("ending")
     assert len(page.model.records) == 1
+    inserted = []
+    monkeypatch.setattr(panel.inserter, "insert", lambda value: inserted.append(value) or True)
     QTest.keyClick(page.list, Qt.Key.Key_Return)
-    assert app.clipboard().text() == content
+    assert inserted == [content]
+    assert app.clipboard().text() != content
     panel.close()
     connection.close()
 
 
-def test_clipboard_page_copies_screenshot(tmp_path, monkeypatch):
+def test_clipboard_page_image_menu_copies_screenshot(tmp_path, monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     connection = open_database(tmp_path / "panel.db")
@@ -97,7 +98,84 @@ def test_clipboard_page_copies_screenshot(tmp_path, monkeypatch):
     assert len(page.model.records) == 1
     assert page.model.records[0].content_type == "image"
     page.list.setCurrentIndex(page.model.index(0, 0))
-    page.copy_current()
+    panel.show()
+    app.processEvents()
+    page.show_item_menu(page.model.index(0, 0), page.list.mapToGlobal(page.list.rect().center()))
+    app.processEvents()
+    assert panel.isVisible()
+    assert page._item_menu.isVisible()
+    page._item_menu.actions()[0].trigger()
+    page._item_menu.hide()
     assert app.clipboard().image().pixelColor(0, 0) == QColor("blue")
+    panel.close()
+    connection.close()
+
+
+def test_clipboard_image_activation_pastes_on_x11(tmp_path, monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    monkeypatch.setenv("XDG_SESSION_TYPE", "x11")
+    app = QApplication.instance() or QApplication([])
+    connection = open_database(tmp_path / "panel.db")
+    repository = ClipboardRepository(connection)
+    image = QImage(4, 4, QImage.Format.Format_ARGB32)
+    image.fill(QColor("green"))
+    buffer = QBuffer()
+    buffer.open(QIODevice.OpenModeFlag.WriteOnly)
+    assert image.save(buffer, "PNG")
+    assert ClipboardCapture(repository, history_limit=10).capture_image(
+        bytes(buffer.data()), "image/png"
+    )
+    panel = PopupPanel(Settings(), clipboard_repository=repository)
+    panel.select_tab(1, persist=False)
+    monkeypatch.setattr("win_dot_panel.ui.popup.shutil.which", lambda name: "/usr/bin/xdotool")
+    commands = []
+    monkeypatch.setattr(panel, "_paste_image", lambda command: commands.append(command))
+    panel.show()
+    panel.clipboard_page.activate_current()
+    QTest.qWait(150)
+    assert app.clipboard().image().pixelColor(0, 0) == QColor("green")
+    assert commands == [["xdotool", "key", "--clearmodifiers", "ctrl+v"]]
+    assert not panel.isVisible()
+    panel.close()
+    connection.close()
+
+
+def test_clipboard_single_click_inserts_and_menu_actions_use_clicked_card(tmp_path, monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    connection = open_database(tmp_path / "panel.db")
+    repository = ClipboardRepository(connection)
+    first = repository.record_text("first", "first", timestamp=1, history_limit=10)
+    second = repository.record_text("second", "second", timestamp=2, history_limit=10)
+    panel = PopupPanel(Settings(), clipboard_repository=repository)
+    panel.select_tab(1, persist=False)
+    page = panel.clipboard_page
+    inserted = []
+    monkeypatch.setattr(panel.inserter, "insert", lambda value: inserted.append(value) or True)
+    page.list.show()
+    app.processEvents()
+    first_index = next(
+        page.model.index(row, 0)
+        for row, record in enumerate(page.model.records)
+        if record.id == first.id
+    )
+    QTest.mouseClick(
+        page.list.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=page.list.visualRect(first_index).center(),
+    )
+    assert inserted == ["first"]
+
+    second_index = next(
+        page.model.index(row, 0)
+        for row, record in enumerate(page.model.records)
+        if record.id == second.id
+    )
+    page.show_item_menu(second_index, page.list.mapToGlobal(page.list.rect().center()))
+    page._item_menu.actions()[1].trigger()
+    page._item_menu.hide()
+    assert repository.get(second.id).is_pinned
+    assert not repository.get(first.id).is_pinned
+    assert inserted == ["first"]
     panel.close()
     connection.close()

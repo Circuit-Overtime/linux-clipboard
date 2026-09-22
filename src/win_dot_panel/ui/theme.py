@@ -148,6 +148,15 @@ def stylesheet(dark: bool) -> str:
         background: $menu_selected;
         color: $text;
     }
+    QMenu {
+        background: $surface;
+        color: $text;
+        border: 1px solid $border;
+        border-radius: 10px;
+        padding: 5px;
+    }
+    QMenu::item { padding: 8px 22px; border-radius: 6px; }
+    QMenu::item:selected { background: $menu_selected; }
     QPushButton#loadMore {
         color: $text;
         background: $field;
@@ -156,13 +165,8 @@ def stylesheet(dark: bool) -> str:
         padding: 6px 10px;
     }
     QPushButton#loadMore:hover,
-    QPushButton#clipboardPin:hover,
-    QPushButton#clipboardDelete:hover,
     QPushButton#clipboardMore:hover { background: $menu_hover; }
     QPushButton#loadMore:focus,
-    QPushButton#clipboardCopy:focus,
-    QPushButton#clipboardPin:focus,
-    QPushButton#clipboardDelete:focus,
     QPushButton#clipboardMore:focus { border-color: $accent; }
     QListView#emojiGrid {
         background: transparent;
@@ -238,9 +242,6 @@ def stylesheet(dark: bool) -> str:
     QListView#textPickerList QScrollBar::sub-page:vertical {
         background: transparent;
     }
-    QPushButton#clipboardCopy,
-    QPushButton#clipboardPin,
-    QPushButton#clipboardDelete,
     QPushButton#clipboardMore {
         background: $field;
         color: $text;
@@ -248,12 +249,6 @@ def stylesheet(dark: bool) -> str:
         border-radius: 9px;
         padding: 7px 10px;
     }
-    QPushButton#clipboardCopy {
-        background: $accent;
-        color: $button_text;
-        border-color: $accent;
-    }
-    QPushButton#clipboardCopy:hover { background: $accent_hover; }
     QPushButton#clipboardClear {
         background: transparent;
         color: $muted;
@@ -262,11 +257,4 @@ def stylesheet(dark: bool) -> str:
     }
     QPushButton#clipboardClear:hover { color: $text; }
     QPushButton#clipboardClear:focus { border-color: $accent; }
-    QPushButton#clipboardCopy:disabled,
-    QPushButton#clipboardPin:disabled,
-    QPushButton#clipboardDelete:disabled {
-        color: $muted;
-        background: $segment;
-        border-color: $border;
-    }
     """).substitute(colors)

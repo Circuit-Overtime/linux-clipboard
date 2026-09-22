@@ -1,14 +1,15 @@
-"""Paged clipboard history with copy and management actions."""
+"""Paged clipboard history with direct activation and per-card actions."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, QRect, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter, QPixmap
+from PySide6.QtCore import QAbstractListModel, QModelIndex, QPoint, QRect, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QFont, QKeyEvent, QMouseEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QLabel,
     QListView,
+    QMenu,
     QPushButton,
     QStyle,
     QStyledItemDelegate,
@@ -107,7 +108,7 @@ class ClipboardCardDelegate(QStyledItemDelegate):
         painter.setFont(font)
         painter.setPen(QColor("#f4f4f6" if self.dark else "#20232b"))
         metrics = painter.fontMetrics()
-        available = width - (64 if record.is_pinned else 0)
+        available = width - (88 if record.is_pinned else 30)
         painter.drawText(
             QRect(left, card.top() + 12, available, 22),
             Qt.AlignmentFlag.AlignVCenter,
@@ -131,6 +132,12 @@ class ClipboardCardDelegate(QStyledItemDelegate):
                 Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
                 "Pinned",
             )
+        painter.setPen(QColor("#a6a9b2" if self.dark else "#727782"))
+        painter.drawText(
+            QRect(card.right() - 35, card.top() + 22, 24, 24),
+            Qt.AlignmentFlag.AlignCenter,
+            "⋯",
+        )
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
@@ -138,18 +145,30 @@ class ClipboardCardDelegate(QStyledItemDelegate):
 
 
 class ClipboardList(QListView):
-    copy_requested = Signal()
+    activate_requested = Signal()
+    menu_requested = Signal(QModelIndex, QPoint)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        index = self.indexAt(event.position().toPoint())
+        if index.isValid() and event.button() == Qt.MouseButton.LeftButton:
+            rect = self.visualRect(index)
+            if event.position().toPoint().x() >= rect.right() - 43:
+                self.setCurrentIndex(index)
+                self.menu_requested.emit(index, event.globalPosition().toPoint())
+                event.accept()
+                return
+        super().mousePressEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.copy_requested.emit()
+            self.activate_requested.emit()
             event.accept()
             return
         super().keyPressEvent(event)
 
 
 class ClipboardPage(QWidget):
-    copied = Signal()
+    activated = Signal(object)
 
     def __init__(self, repository: ClipboardRepository, *, dark: bool) -> None:
         super().__init__()
@@ -184,30 +203,17 @@ class ClipboardPage(QWidget):
         self.list.setSpacing(5)
         self.list.setUniformItemSizes(True)
         self.list.setVerticalScrollMode(QListView.ScrollMode.ScrollPerPixel)
-        self.list.doubleClicked.connect(self.copy_current)
-        self.list.copy_requested.connect(self.copy_current)
-        self.list.selectionModel().currentChanged.connect(self._selection_changed)
+        self.list.clicked.connect(self.activate_index)
+        self.list.activate_requested.connect(self.activate_current)
+        self.list.menu_requested.connect(self.show_item_menu)
+        self.list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.list.customContextMenuRequested.connect(self._context_menu)
         layout.addWidget(self.list, 1)
 
         self.empty = QLabel("No clipboard history yet")
         self.empty.setObjectName("emptyCaption")
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.empty)
-
-        actions = QHBoxLayout()
-        self.copy_button = QPushButton("Copy")
-        self.copy_button.setObjectName("clipboardCopy")
-        self.copy_button.clicked.connect(self.copy_current)
-        actions.addWidget(self.copy_button)
-        self.pin_button = QPushButton("Pin")
-        self.pin_button.setObjectName("clipboardPin")
-        self.pin_button.clicked.connect(self.toggle_pin)
-        actions.addWidget(self.pin_button)
-        self.delete_button = QPushButton("Delete")
-        self.delete_button.setObjectName("clipboardDelete")
-        self.delete_button.clicked.connect(self.delete_current)
-        actions.addWidget(self.delete_button)
-        layout.addLayout(actions)
 
         self.more = QPushButton("Load more")
         self.more.setObjectName("clipboardMore")
@@ -251,7 +257,6 @@ class ClipboardPage(QWidget):
         self.empty.setText("No matches" if self.query else "No clipboard history yet")
         self.empty.setVisible(not has_items)
         self.more.setVisible(self.has_more)
-        self._selection_changed()
 
     def _current(self) -> ClipboardPreview | None:
         index = self.list.currentIndex()
@@ -259,24 +264,62 @@ class ClipboardPage(QWidget):
             return None
         return self.model.records[index.row()]
 
-    def _selection_changed(self) -> None:
-        record = self._current()
-        selected = record is not None
-        self.copy_button.setEnabled(selected)
-        self.pin_button.setEnabled(selected)
-        self.delete_button.setEnabled(selected)
-        self.pin_button.setText("Unpin" if selected and record.is_pinned else "Pin")
-
     def select_current_or_first(self) -> None:
         if self._current() is None and self.model.records:
             self.list.setCurrentIndex(self.model.index(0, 0))
-        self.copy_current()
+        self.activate_current()
 
-    def copy_current(self, _index: QModelIndex | None = None) -> None:
+    def activate_index(self, index: QModelIndex) -> None:
+        if index.isValid():
+            self.list.setCurrentIndex(index)
+            self.activate_current()
+
+    def activate_current(self) -> None:
         record = self._current()
         if record is None:
             return
         item = self.repository.get(record.id)
+        if item is None:
+            self.refresh()
+        else:
+            self.activated.emit(item)
+
+    def _context_menu(self, position: QPoint) -> None:
+        index = self.list.indexAt(position)
+        if index.isValid():
+            self.show_item_menu(index, self.list.viewport().mapToGlobal(position))
+
+    def show_item_menu(self, index: QModelIndex, global_position: QPoint) -> None:
+        if not index.isValid():
+            return
+        record = self.model.records[index.row()]
+        item_id = record.id
+        menu = QMenu(self)
+        copy_action = menu.addAction("Copy to clipboard")
+        pin_action = menu.addAction("Unpin" if record.is_pinned else "Pin")
+        delete_action = menu.addAction("Remove")
+        copy_action.triggered.connect(lambda: self.copy_item(item_id))
+        pin_action.triggered.connect(lambda: self._set_pinned(item_id, not record.is_pinned))
+        delete_action.triggered.connect(lambda: self._delete_item(item_id))
+        menu.aboutToHide.connect(menu.deleteLater)
+        self._item_menu = menu
+        menu.popup(global_position)
+
+    def _set_pinned(self, item_id: int, pinned: bool) -> None:
+        if self.repository.set_pinned(item_id, pinned):
+            self.refresh(select_id=item_id)
+
+    def _delete_item(self, item_id: int) -> None:
+        if self.repository.delete(item_id):
+            self.refresh()
+
+    def copy_current(self, _index: QModelIndex | None = None) -> None:
+        record = self._current()
+        if record is not None:
+            self.copy_item(record.id)
+
+    def copy_item(self, item_id: int) -> None:
+        item = self.repository.get(item_id)
         if item is None:
             self.refresh()
             return
@@ -289,7 +332,6 @@ class ClipboardPage(QWidget):
             QApplication.clipboard().setImage(image)
         else:
             QApplication.clipboard().setText(item.text_content)
-        self.copied.emit()
 
     def toggle_pin(self) -> None:
         record = self._current()

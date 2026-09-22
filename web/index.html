@@ -167,15 +167,8 @@
           <div class="install-card">
             <h3>APT repository</h3><p>Add the signed repository once. After that, normal APT updates include Win Dot Panel.</p>
             <div class="status" id="apt-status" role="status">Checking repository availability…</div>
-            <div class="code-box"><pre id="apt-command">sudo apt update
-sudo apt install curl gnupg
-sudo install -d -m 755 /etc/apt/keyrings
-curl -fsSL -o /var/tmp/win-dot-panel-apt.asc https://packages.elixpo.com/apt/keyring.asc
-sudo gpg --dearmor --yes -o /etc/apt/keyrings/win-dot-panel.gpg /var/tmp/win-dot-panel-apt.asc
-echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://packages.elixpo.com/apt/ ./' | sudo tee /etc/apt/sources.list.d/win-dot-panel.list
-sudo apt update
-sudo apt install win-dot-panel
-apt-cache policy win-dot-panel</pre><button class="copy" data-copy="apt-command" aria-label="Copy APT install commands">Copy</button></div>
+            <div class="code-box"><pre id="apt-command">curl -fsSL -o /var/tmp/win-dot-panel-install.sh https://packages.elixpo.com/install.sh &amp;&amp; bash /var/tmp/win-dot-panel-install.sh</pre><button class="copy" data-copy="apt-command" aria-label="Copy APT install command">Copy</button></div>
+            <a class="small-link" href="https://github.com/Circuit-Overtime/linux-clipboard/blob/main/docs/apt-repository.md#manual-setup">Prefer the manual APT steps? ↗</a>
             <div class="code-box" style="margin-top:12px"><pre id="update-command">sudo apt update &amp;&amp; sudo apt install --only-upgrade win-dot-panel</pre><button class="copy" data-copy="update-command" aria-label="Copy update command">Copy</button></div>
           </div>
           <div class="install-card">

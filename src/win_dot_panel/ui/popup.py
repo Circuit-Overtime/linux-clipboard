@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
+import shutil
+import subprocess
 
 from PySide6.QtCore import (
     QEasingCurve,
@@ -39,6 +42,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from win_dot_panel.clipboard.models import ClipboardItem
 from win_dot_panel.config import TABS, Settings
 from win_dot_panel.insertion import TextInserter
 from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
@@ -185,7 +189,7 @@ class PopupPanel(QWidget):
         if self.emoji_page is not None:
             self.emoji_page.emoji_selected.connect(self._insert_text)
         if self.clipboard_page is not None:
-            self.clipboard_page.copied.connect(self.hide_panel)
+            self.clipboard_page.activated.connect(self._insert_clipboard_item)
         self.kaomoji_page.text_selected.connect(self._insert_text)
         self.symbols_page.text_selected.connect(self._insert_text)
 
@@ -295,7 +299,11 @@ class PopupPanel(QWidget):
             self.panel_hidden.emit()
 
     def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.Type.WindowDeactivate and self.isVisible():
+        if (
+            event.type() == QEvent.Type.WindowDeactivate
+            and self.isVisible()
+            and QApplication.activePopupWidget() is None
+        ):
             self.hide_panel()
         super().changeEvent(event)
 
@@ -367,9 +375,43 @@ class PopupPanel(QWidget):
         if self.inserter.insert(value):
             self.hint.setText("Inserted at the previous cursor position")
         else:
-            QApplication.clipboard().setText(value)
-            self.hint.setText("Copied — paste with Ctrl+V")
+            self.hint.setText("Could not insert here — focus an editable text field and reopen")
         self.hint_animation.stop()
         self.hint_animation.setStartValue(0.35)
         self.hint_animation.setEndValue(1.0)
         self.hint_animation.start()
+
+    def _insert_clipboard_item(self, item: ClipboardItem) -> None:
+        if item.content_type == "text":
+            self._insert_text(item.text_content)
+            if self.hint.text() == "Inserted at the previous cursor position":
+                self.hide_panel()
+            return
+        if not item.image_content:
+            self.hint.setText("This image is unavailable")
+            return
+        wayland = os.environ.get("XDG_SESSION_TYPE") == "wayland"
+        command = (
+            ["ydotool", "key", "29:1", "47:1", "47:0", "29:0"]
+            if wayland
+            else ["xdotool", "key", "--clearmodifiers", "ctrl+v"]
+        )
+        if shutil.which(command[0]) is None:
+            self.hint.setText(f"Image insertion needs {command[0]} on this desktop")
+            return
+        from PySide6.QtGui import QImage
+
+        image = QImage.fromData(item.image_content, "PNG")
+        if image.isNull():
+            self.hint.setText("This image could not be loaded")
+            return
+        QApplication.clipboard().setImage(image)
+        self.hide_panel()
+        QTimer.singleShot(120, lambda: self._paste_image(command))
+
+    @staticmethod
+    def _paste_image(command: list[str]) -> None:
+        try:
+            subprocess.Popen(command, stdin=subprocess.DEVNULL, start_new_session=True)
+        except OSError:
+            LOGGER.warning("Could not send paste shortcut", exc_info=True)

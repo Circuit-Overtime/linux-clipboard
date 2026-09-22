@@ -12,7 +12,7 @@ import pytest
 def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     if shutil.which("dpkg-deb") is None:
         pytest.skip("dpkg-deb is unavailable")
-    wheel = tmp_path / "win_dot_panel-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "win_dot_panel-1.0.0-py3-none-any.whl"
     icon = (Path(__file__).resolve().parents[1] / "web" / "favicon.png").read_bytes()
     with ZipFile(wheel, "w") as archive:
         for name in (
@@ -33,10 +33,10 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
                     else "",
                 )
         archive.writestr(
-            "win_dot_panel-0.1.0.dist-info/METADATA",
-            "Metadata-Version: 2.1\nName: win-dot-panel\nVersion: 0.1.0\n",
+            "win_dot_panel-1.0.0.dist-info/METADATA",
+            "Metadata-Version: 2.1\nName: win-dot-panel\nVersion: 1.0.0\n",
         )
-        archive.writestr("win_dot_panel-0.1.0.dist-info/WHEEL", "Root-Is-Purelib: true\n")
+        archive.writestr("win_dot_panel-1.0.0.dist-info/WHEEL", "Root-Is-Purelib: true\n")
 
     script = Path(__file__).resolve().parents[1] / "scripts" / "build_deb.py"
     subprocess.run(
@@ -51,17 +51,19 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
         ],
         check=True,
     )
-    package = tmp_path / "win-dot-panel_0.1.0-2_all.deb"
+    package = tmp_path / "win-dot-panel_1.0.0-2_all.deb"
     contents = subprocess.check_output(["dpkg-deb", "--contents", str(package)], text=True)
     depends = subprocess.check_output(["dpkg-deb", "--field", str(package), "Depends"], text=True)
     assert "./usr/bin/win-dot-panel" in contents
     assert "./usr/lib/python3/dist-packages/win_dot_panel/resources/emoji.json" in contents
     assert "./usr/share/doc/win-dot-panel/copyright" in contents
     assert "./usr/share/applications/win-dot-panel.desktop" in contents
+    assert "./etc/xdg/autostart/win-dot-panel.desktop" in contents
     assert "./usr/share/icons/hicolor/512x512/apps/win-dot-panel.png" in contents
     assert "drwxr-xr-x root/root" in contents
     assert "-rwxr-xr-x root/root" in contents
     assert "wl-clipboard" in depends
+    assert "xdotool" in depends
     assert "python3-pyside6.qtwidgets" in depends
     assert "python3-pyside6.qtnetwork" in depends
     unpacked = tmp_path / "unpacked"
@@ -72,6 +74,8 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     desktop = (unpacked / "usr/share/applications/win-dot-panel.desktop").read_text()
     assert "Exec=/usr/bin/win-dot-panel toggle\n" in desktop
     assert "Icon=win-dot-panel\n" in desktop
+    autostart = (unpacked / "etc/xdg/autostart/win-dot-panel.desktop").read_text()
+    assert "Exec=/usr/bin/win-dot-panel daemon\n" in autostart
     assert (
         unpacked / "usr/share/icons/hicolor/512x512/apps/win-dot-panel.png"
     ).read_bytes() == icon
@@ -97,7 +101,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
         ],
         check=True,
     )
-    snapshot = tmp_path / "win-dot-panel_0.1.0~main.42-1_all.deb"
+    snapshot = tmp_path / "win-dot-panel_1.0.0~main.42-1_all.deb"
     assert snapshot.exists()
     version = subprocess.check_output(["dpkg-deb", "--field", str(snapshot), "Version"], text=True)
-    assert version.strip() == "0.1.0~main.42-1"
+    assert version.strip() == "1.0.0~main.42-1"

@@ -17,7 +17,7 @@ PYTHON_DIR = Path("usr/lib/python3/dist-packages")
 DEPENDENCIES = (
     "python3 (>= 3.10), python3-pyside6.qtwidgets (>= 6.6), "
     "python3-pyside6.qtnetwork (>= 6.6), "
-    "python3-gi, gir1.2-atspi-2.0, wl-clipboard"
+    "python3-gi, gir1.2-atspi-2.0, wl-clipboard, xdotool"
 )
 
 
@@ -118,6 +118,20 @@ def _write_desktop_integration(stage: Path, wheel: ZipFile) -> None:
     icon = stage / "usr/share/icons/hicolor/512x512/apps" / f"{PACKAGE}.png"
     icon.parent.mkdir(parents=True, exist_ok=True)
     icon.write_bytes(wheel.read(f"{MODULE}/resources/icon.png"))
+    autostart = stage / "etc/xdg/autostart" / f"{PACKAGE}.desktop"
+    autostart.parent.mkdir(parents=True, exist_ok=True)
+    autostart.write_text(
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=Win Dot Panel\n"
+        "Comment=Keep the emoji and clipboard panel ready\n"
+        "Exec=/usr/bin/win-dot-panel daemon\n"
+        "TryExec=/usr/bin/win-dot-panel\n"
+        "Terminal=false\n"
+        "NoDisplay=true\n"
+        "X-GNOME-Autostart-enabled=true\n",
+        encoding="utf-8",
+    )
 
 
 def _write_postinst(stage: Path) -> None:

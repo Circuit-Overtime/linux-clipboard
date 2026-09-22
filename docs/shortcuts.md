@@ -2,7 +2,7 @@
 
 Win Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `/usr/bin/win-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
 
-Starting with package version `0.1.0-5`, Win Dot Panel also appears in the app menu, so you can open it before setting shortcuts.
+Win Dot Panel also appears in the app menu, so you can open it before setting shortcuts.
 
 For a separate clipboard shortcut, assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard`. It opens the Clipboard tab, switches to it from another tab, or closes the panel when Clipboard is already open.
 

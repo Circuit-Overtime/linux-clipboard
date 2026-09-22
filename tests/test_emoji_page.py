@@ -37,16 +37,17 @@ def test_selection_inserts_emoji_and_keeps_panel_open(tmp_path, monkeypatch):
     connection.close()
 
 
-def test_selection_copies_when_direct_insertion_is_unavailable(tmp_path, monkeypatch):
+def test_selection_preserves_clipboard_when_direct_insertion_is_unavailable(tmp_path, monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     connection = open_database(tmp_path / "panel.db")
     panel = PopupPanel(Settings(), ensure_emoji_dataset(connection))
     monkeypatch.setattr(panel.inserter, "insert", lambda value: False)
+    app.clipboard().setText("keep this")
 
     panel.emoji_page.set_query("rocket")
     panel.emoji_page.select_current_or_first()
-    assert app.clipboard().text() == "🚀"
-    assert panel.hint.text() == "Copied — paste with Ctrl+V"
+    assert app.clipboard().text() == "keep this"
+    assert panel.hint.text() == "Could not insert here — focus an editable text field and reopen"
     panel.close()
     connection.close()

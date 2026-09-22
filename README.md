@@ -18,44 +18,37 @@ The clipboard items shown here are examples.
 ## What you can do
 
 - Find emoji, kaomoji, and symbols, even without an internet connection.
-- Reuse copied text and screenshots from your clipboard history. Search, pin, or delete entries.
-- Insert a character into the field you were using when the app can access it. Otherwise, the app copies it and shows you how to paste it.
+- Click an emoji, kaomoji, symbol, or text history item to insert it at your previous text cursor. Your clipboard stays unchanged for text insertion.
+- Click a screenshot to paste it where you were working. Right-click any history card, or use its **⋯** button, to copy, pin, or remove it.
 - Switch between light and dark appearances with your desktop.
 
 Your clipboard history stays on your computer.
 
 ## Install
 
-The Debian package is available for Debian 13 and Ubuntu 26.04. Add the signed APT repository once, then install with your normal package manager:
+The Debian package is available for Debian 13 and Ubuntu 26.04. Run this once to add the signed APT repository and install Win Dot Panel:
 
 ```bash
-sudo apt update
-sudo apt install curl gnupg
-sudo install -d -m 755 /etc/apt/keyrings
-curl -fsSL -o /var/tmp/win-dot-panel-apt.asc \
-  https://packages.elixpo.com/apt/keyring.asc
-sudo gpg --dearmor --yes -o /etc/apt/keyrings/win-dot-panel.gpg \
-  /var/tmp/win-dot-panel-apt.asc
-echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://packages.elixpo.com/apt/ ./' | \
-  sudo tee /etc/apt/sources.list.d/win-dot-panel.list
-sudo apt update
-sudo apt install win-dot-panel
-apt-cache policy win-dot-panel
+curl -fsSL -o /var/tmp/win-dot-panel-install.sh https://packages.elixpo.com/install.sh && bash /var/tmp/win-dot-panel-install.sh
 ```
 
-The same steps are on [packages.elixpo.com](https://packages.elixpo.com/). If you prefer a standalone package, get the latest stable `.deb` from [GitHub Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest). For other Linux distributions, see the [developer guide](docs/development.md).
+The script checks the APT signing key, adds the repository, and installs the latest stable package. [Manual setup steps](docs/apt-repository.md#manual-setup) are available if you prefer to run each command yourself. If `curl` is missing, install it first with `sudo apt install curl`.
 
-Starting with version `0.1.0-5`, the installer prints the shortcut commands and adds an app-menu launcher. On any installed version, `/usr/bin/win-dot-panel toggle` opens the panel.
+The same quick command is on [packages.elixpo.com](https://packages.elixpo.com/). If you prefer a standalone package, get the latest stable `.deb` from [GitHub Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest). For other Linux distributions, see the [developer guide](docs/development.md).
+
+The installer prints the shortcut commands and adds an app-menu launcher. `/usr/bin/win-dot-panel toggle` opens the panel.
 
 ## Open the panel
 
-Run `/usr/bin/win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in and keep clipboard history available, run `/usr/bin/win-dot-panel install` once.
+Run `/usr/bin/win-dot-panel toggle` to show or hide it. New packages start the background app when you sign in, so the panel opens quickly and clipboard history stays available. For an older package, run `/usr/bin/win-dot-panel install` once to enable login startup.
 
 To open it with **Super + .**, add `/usr/bin/win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. Assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. The shortcut also starts the app if it is not already running.
 
 If you previously ran the app from a local `.venv`, change your desktop shortcuts to these `/usr/bin` commands and run `/usr/bin/win-dot-panel install` again to refresh its login startup entry.
 
-The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
+The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an item to insert it. Clipboard cards have a **⋯** menu with **Copy to clipboard**, **Pin**, and **Remove**. Press **Esc** to close the panel.
+
+Text insertion needs an accessible editable field. The panel shows a message if the app you were using does not expose one. Screenshot insertion uses `xdotool` on X11, which is included with the Debian package, or an available `ydotool` setup on Wayland.
 
 The **Open Source** tab links to the repository, issues, and documentation.
 
@@ -71,7 +64,7 @@ sudo apt install --only-upgrade win-dot-panel
 
 The last command closes any older background process; the next shortcut press starts the updated app. A message saying the daemon is not running is harmless. Normal system upgrades also include new stable versions.
 
-If you previously installed a `.deb` manually, adding this APT source lets future stable versions arrive through APT. `apt-cache policy win-dot-panel` shows the installed version and the available candidate.
+If you previously installed a `.deb` manually, the setup script also switches you to repository updates. `apt-cache policy win-dot-panel` shows the installed version and the available candidate. For the exact installed Debian version, run `dpkg-query -W -f='${Version}\n' win-dot-panel`.
 
 ## Remove
 

@@ -6,9 +6,41 @@ import argparse
 import subprocess
 import sys
 import time
+from pathlib import Path
 from urllib.error import URLError
 
+from win_dot_panel import __version__
 from win_dot_panel.ipc.client import send_command
+
+
+def _installed_version() -> str:
+    """Include the Debian revision when this module came from the system package."""
+    package_path = Path("/usr/lib/python3/dist-packages/win_dot_panel")
+    if not Path(__file__).resolve().is_relative_to(package_path):
+        return __version__
+    try:
+        result = subprocess.run(
+            ["dpkg-query", "-W", "-f=${Version}", "win-dot-panel"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return __version__
+    version = result.stdout.strip()
+    return version if result.returncode == 0 and version.startswith(__version__) else __version__
+
+
+class _VersionAction(argparse.Action):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        _namespace: argparse.Namespace,
+        _values: object,
+        _option_string: str | None = None,
+    ) -> None:
+        print(f"{parser.prog} {_installed_version()}")
+        parser.exit()
 
 
 def _start_daemon() -> None:
@@ -70,6 +102,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="win-dot-panel",
         description="Emoji and clipboard panel for Linux",
+    )
+    parser.add_argument(
+        "--version", action=_VersionAction, nargs=0, help="Show installed version and exit"
     )
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("demo", help="Open the popup prototype")

@@ -14,7 +14,7 @@ python -m pip install -e '.[dev]'
 win-dot-panel demo
 ```
 
-`--system-site-packages` lets the environment use the system's `gi` module for direct text insertion. On Ubuntu, `python3-gi` and `gir1.2-atspi-2.0` supply the required components. Without them, selections are copied for manual pasting. Restart the daemon after changing its Python environment.
+`--system-site-packages` lets the environment use the system's `gi` module for direct text insertion. On Ubuntu, `python3-gi` and `gir1.2-atspi-2.0` supply the required components. Without them, text insertion is unavailable and the panel leaves the clipboard unchanged. Restart the daemon after changing its Python environment.
 
 Useful commands are `win-dot-panel toggle`, `win-dot-panel status`, `win-dot-panel quit`, and `win-dot-panel daemon` for foreground troubleshooting. `win-dot-panel install` adds XDG autostart for the current interpreter; `win-dot-panel uninstall` removes it. `win-dot-panel install --method systemd` is an alternative user service. Uninstall the current startup method before switching.
 

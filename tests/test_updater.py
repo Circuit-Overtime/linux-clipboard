@@ -9,17 +9,17 @@ from win_dot_panel import updater
 
 
 def test_snapshot_checksum_accepts_githubs_renamed_asset():
-    package = "win-dot-panel_0.1.0.main.9-1_all.deb"
+    package = "win-dot-panel_1.0.0.main.9-1_all.deb"
     digest = "a" * 64
-    checksums = f"{digest}  win-dot-panel_0.1.0~main.9-1_all.deb\n".encode()
+    checksums = f"{digest}  win-dot-panel_1.0.0~main.9-1_all.deb\n".encode()
     assert updater._expected_hash(checksums, package) == digest
 
 
 def test_updater_verifies_package_before_apt(tmp_path, monkeypatch):
     package = b"Debian package contents"
-    package_name = "win-dot-panel_0.1.0-4_all.deb"
+    package_name = "win-dot-panel_1.0.0-1_all.deb"
     release = {
-        "tag_name": "v0.1.0-4",
+        "tag_name": "v1.0.0-1",
         "assets": [
             {"name": package_name, "browser_download_url": "https://example.test/package"},
             {"name": "SHA256SUMS", "browser_download_url": "https://example.test/checksums"},
@@ -56,7 +56,7 @@ def test_updater_verifies_package_before_apt(tmp_path, monkeypatch):
         return SimpleNamespace()
 
     monkeypatch.setattr(updater.subprocess, "run", run)
-    assert updater.update() == "v0.1.0-4"
+    assert updater.update() == "v1.0.0-1"
     assert commands[0][:2] == ["dpkg-deb", "--field"]
     assert commands[1][:4] == ["sudo", "apt", "install", "--allow-downgrades"]
     assert stopped == ["quit"]

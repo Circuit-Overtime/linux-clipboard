@@ -73,11 +73,12 @@ def test_kaomoji_rows_fill_available_width_after_resize_and_filter(monkeypatch):
     panel.close()
 
 
-def test_symbols_search_category_and_copy_fallback(monkeypatch):
+def test_symbols_search_category_and_insertion_failure(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     panel = PopupPanel(Settings())
     monkeypatch.setattr(panel.inserter, "insert", lambda value: False)
+    app.clipboard().setText("keep this")
     panel.select_tab(3, persist=False)
     panel.show()
     app.processEvents()
@@ -98,7 +99,8 @@ def test_symbols_search_category_and_copy_fallback(monkeypatch):
     panel.search.setText("copyright")
     assert panel.symbols_page.model.records[0].value == "©"
     panel.symbols_page.select_current_or_first()
-    assert app.clipboard().text() == "©"
+    assert app.clipboard().text() == "keep this"
+    assert panel.hint.text() == "Could not insert here — focus an editable text field and reopen"
 
     panel.search.clear()
     panel.symbols_page.category.setCurrentText("Arrows")

@@ -1045,7 +1045,7 @@ update usage stats
   ↓
 try AT-SPI insertion into the text field focused before opening
   ├── supported → insert at caret
-  └── unavailable → copy to clipboard and show paste hint
+  └── unavailable → show an insertion error without changing the clipboard
   ↓
 keep panel open for another selection
 ```
@@ -1785,7 +1785,7 @@ Done when:
 Search: rocket
 ```
 
-shows relevant emoji and selecting one inserts it into a supported text field or copies it as a fallback, while keeping the panel open.
+shows relevant emoji and selecting one inserts it into a supported text field while keeping the panel open. If the field is inaccessible, the panel explains why insertion failed and leaves the clipboard unchanged.
 
 ---
 
