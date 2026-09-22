@@ -1,8 +1,19 @@
 # Win Dot Panel
 
+<p align="center"><img src="web/favicon.png" alt="Win Dot Panel panda mascot" width="104"></p>
+
 A quick emoji and clipboard panel for Linux. It has a clean, macOS-inspired look and the familiar Windows emoji picker behavior: choose an emoji, keep the panel open, and choose another.
 
 Built for GNOME and KDE Plasma on Wayland or X11.
+
+## Preview
+
+<p align="center">
+  <a href="docs/images/emoji-panel.png"><img src="docs/images/emoji-panel.png" alt="Emoji tab with recent emoji and an eight-column grid" width="310"></a>
+  <a href="docs/images/clipboard-panel.png"><img src="docs/images/clipboard-panel.png" alt="Clipboard tab showing example screenshot and text history" width="310"></a>
+</p>
+
+The clipboard items shown here are examples.
 
 ## What you can do
 
