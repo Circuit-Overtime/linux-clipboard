@@ -1,4 +1,4 @@
-"""Indexed, paged access to local text clipboard history."""
+"""Indexed, paged access to local clipboard history."""
 
 from __future__ import annotations
 
@@ -131,10 +131,11 @@ class ClipboardRepository:
                    content_type, thumbnail_content
             FROM clipboard_items
             WHERE ? = '' OR instr(lower(text_content), lower(?)) > 0
+                OR (content_type = 'image' AND instr('screenshot image', lower(?)) > 0)
             ORDER BY is_pinned DESC, last_used_at DESC, id DESC
             LIMIT ? OFFSET ?
             """,
-            (query, query, limit, offset),
+            (query, query, query, limit, offset),
         )
         return [
             ClipboardPreview(

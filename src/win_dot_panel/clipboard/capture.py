@@ -1,12 +1,12 @@
-"""Validate and store bounded text clipboard changes."""
+"""Validate and store bounded clipboard changes."""
 
 from __future__ import annotations
 
 import hashlib
 import time
 
-from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
 from win_dot_panel.clipboard.images import normalize_image
+from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
 
 MAX_TEXT_BYTES = 1024 * 1024
 

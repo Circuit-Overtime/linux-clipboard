@@ -7,7 +7,7 @@ Built for GNOME and KDE Plasma on Wayland or X11.
 ## What you can do
 
 - Find emoji, kaomoji, and symbols, even without an internet connection.
-- Reuse copied text from your clipboard history. Search, pin, or delete entries.
+- Reuse copied text and screenshots from your clipboard history. Search, pin, or delete entries.
 - Insert a character into the field you were using when the app can access it. Otherwise, the app copies it and shows you how to paste it.
 - Switch between light and dark appearances with your desktop.
 
@@ -29,7 +29,7 @@ The release page also provides a checksum file if you want to verify the downloa
 
 Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once.
 
-To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. You can also assign **Super + V** to `win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help.
+To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. You can also assign **Super + V** to `win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. Run `win-dot-panel install` once to record copies while the panel is closed; the shortcut also starts the app if it is not already running.
 
 The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
 

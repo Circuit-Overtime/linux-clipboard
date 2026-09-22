@@ -9,9 +9,9 @@ import sys
 from PySide6.QtCore import QObject, QProcess, Signal
 from PySide6.QtWidgets import QApplication
 
-LOGGER = logging.getLogger(__name__)
-
 from win_dot_panel.clipboard.backends.x11 import X11ClipboardBackend
+
+LOGGER = logging.getLogger(__name__)
 
 
 class WaylandClipboardBackend(QObject):

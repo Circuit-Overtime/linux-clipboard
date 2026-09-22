@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QBuffer, QIODevice, Qt
+from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
+from win_dot_panel.clipboard.capture import ClipboardCapture
 from win_dot_panel.config import Settings
 from win_dot_panel.storage.database import open_database
 from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
@@ -72,5 +74,30 @@ def test_clipboard_page_copies_full_text_after_loading_only_a_preview(tmp_path, 
     assert len(page.model.records) == 1
     QTest.keyClick(page.list, Qt.Key.Key_Return)
     assert app.clipboard().text() == content
+    panel.close()
+    connection.close()
+
+
+def test_clipboard_page_copies_screenshot(tmp_path, monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    connection = open_database(tmp_path / "panel.db")
+    repository = ClipboardRepository(connection)
+    image = QImage(4, 4, QImage.Format.Format_ARGB32)
+    image.fill(QColor("blue"))
+    buffer = QBuffer()
+    buffer.open(QIODevice.OpenModeFlag.WriteOnly)
+    assert image.save(buffer, "PNG")
+    assert ClipboardCapture(repository, history_limit=10).capture_image(
+        bytes(buffer.data()), "image/png"
+    )
+    panel = PopupPanel(Settings(), clipboard_repository=repository)
+    panel.select_tab(1, persist=False)
+    page = panel.clipboard_page
+    assert len(page.model.records) == 1
+    assert page.model.records[0].content_type == "image"
+    page.list.setCurrentIndex(page.model.index(0, 0))
+    page.copy_current()
+    assert app.clipboard().image().pixelColor(0, 0) == QColor("blue")
     panel.close()
     connection.close()

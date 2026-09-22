@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QRect, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter
+from PySide6.QtGui import QColor, QFont, QKeyEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -35,13 +35,14 @@ class ClipboardListModel(QAbstractListModel):
         if not index.isValid() or not 0 <= index.row() < len(self.records):
             return None
         record = self.records[index.row()]
+        description = "Screenshot" if record.content_type == "image" else record.preview
         if role == Qt.ItemDataRole.DisplayRole:
-            return record.preview
+            return description
         if role == Qt.ItemDataRole.AccessibleTextRole:
             label = "Pinned clipboard item" if record.is_pinned else "Clipboard item"
-            return f"{label}: {record.preview}"
+            return f"{label}: {description}"
         if role == Qt.ItemDataRole.ToolTipRole:
-            return record.preview
+            return description
         if role == Qt.ItemDataRole.UserRole:
             return record.id
         return None
@@ -84,7 +85,22 @@ class ClipboardCardDelegate(QStyledItemDelegate):
 
         left = card.left() + 14
         width = card.width() - 28
-        text = record.preview.replace("\t", "    ").splitlines()
+        if record.content_type == "image" and record.thumbnail_content:
+            thumbnail = QPixmap()
+            if thumbnail.loadFromData(record.thumbnail_content, "PNG"):
+                preview_box = QRect(left, card.top() + 6, 54, 54)
+                painter.drawPixmap(
+                    preview_box,
+                    thumbnail,
+                    thumbnail.rect(),
+                )
+                left += 64
+                width -= 64
+        text = (
+            ["Screenshot", "Image copied to clipboard"]
+            if record.content_type == "image"
+            else record.preview.replace("\t", "    ").splitlines()
+        )
         title = text[0] if text else ""
         font = QFont(option.font)
         font.setWeight(QFont.Weight.Medium)
@@ -173,7 +189,7 @@ class ClipboardPage(QWidget):
         self.list.selectionModel().currentChanged.connect(self._selection_changed)
         layout.addWidget(self.list, 1)
 
-        self.empty = QLabel("No copied text yet")
+        self.empty = QLabel("No clipboard history yet")
         self.empty.setObjectName("emptyCaption")
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.empty)
@@ -232,7 +248,7 @@ class ClipboardPage(QWidget):
     def _update_view(self) -> None:
         has_items = bool(self.model.records)
         self.list.setVisible(has_items)
-        self.empty.setText("No matches" if self.query else "No copied text yet")
+        self.empty.setText("No matches" if self.query else "No clipboard history yet")
         self.empty.setVisible(not has_items)
         self.more.setVisible(self.has_more)
         self._selection_changed()
@@ -264,7 +280,15 @@ class ClipboardPage(QWidget):
         if item is None:
             self.refresh()
             return
-        QApplication.clipboard().setText(item.text_content)
+        if item.content_type == "image":
+            from PySide6.QtGui import QImage
+
+            image = QImage.fromData(item.image_content or b"", "PNG")
+            if image.isNull():
+                return
+            QApplication.clipboard().setImage(image)
+        else:
+            QApplication.clipboard().setText(item.text_content)
         self.copied.emit()
 
     def toggle_pin(self) -> None:

@@ -25,10 +25,7 @@ def normalize_image(data: bytes, mime_type: str) -> tuple[bytes, bytes] | None:
     source.open(QIODevice.OpenModeFlag.ReadOnly)
     reader = QImageReader(source)
     dimensions = reader.size()
-    if (
-        not dimensions.isValid()
-        or dimensions.width() * dimensions.height() > MAX_IMAGE_PIXELS
-    ):
+    if not dimensions.isValid() or dimensions.width() * dimensions.height() > MAX_IMAGE_PIXELS:
         return None
     image = reader.read()
     if image.isNull():

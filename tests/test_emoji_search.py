@@ -20,7 +20,7 @@ def test_version_one_database_migrates_without_losing_data(tmp_path):
     assert migrated.execute("SELECT value FROM settings WHERE key = 'keep'").fetchone()[0] == "yes"
     assert (
         migrated.execute("SELECT value FROM metadata WHERE key = 'schema_version'").fetchone()[0]
-        == "2"
+        == "3"
     )
     migrated.close()
 

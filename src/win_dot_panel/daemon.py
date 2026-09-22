@@ -12,6 +12,7 @@ import sys
 from typing import IO
 
 from win_dot_panel.clipboard.capture import MAX_TEXT_BYTES, ClipboardCapture
+from win_dot_panel.clipboard.images import MAX_IMAGE_BYTES
 from win_dot_panel.config import TABS, Settings
 from win_dot_panel.emoji.importer import ensure_emoji_dataset
 from win_dot_panel.ipc.protocol import COMMANDS, lock_path
@@ -105,34 +106,37 @@ def run_daemon() -> int:
                 encoded = request.get("data")
                 if not isinstance(encoded, str):
                     raise TypeError("Missing clipboard data")
+                mime_type = request.get("mime_type", "text/plain")
+                if not isinstance(mime_type, str):
+                    raise TypeError("Invalid clipboard type")
+                image = mime_type.startswith("image/")
                 try:
                     data = base64.b64decode(encoded, validate=True)
-                    if len(data) > MAX_TEXT_BYTES:
+                    if len(data) > (MAX_IMAGE_BYTES if image else MAX_TEXT_BYTES):
                         raise ValueError("Clipboard data too large")
-                    text = data.decode("utf-8")
+                    if not image:
+                        text = data.decode("utf-8")
                 except (binascii.Error, UnicodeDecodeError, ValueError) as error:
                     raise ValueError("Invalid clipboard data") from error
-                return {"ok": True, "stored": capture.capture(text)}
+                stored = capture.capture_image(data, mime_type) if image else capture.capture(text)
+                return {"ok": True, "stored": stored}
 
             server = IpcServer(handle, handle_clipboard_event)
             server.start()
             app.aboutToQuit.connect(server.stop)
             if os.environ.get("XDG_SESSION_TYPE") == "wayland" or app.platformName() == "wayland":
-                wayland_backend = WaylandClipboardBackend()
-                if wayland_backend.start():
-                    backend = wayland_backend
-                else:
-                    backend = X11ClipboardBackend()
-                    backend.clipboard_changed.connect(
-                        lambda text, sensitive: capture.capture(text, sensitive=sensitive)
-                    )
-                    backend.start()
+                backend = WaylandClipboardBackend()
             else:
                 backend = X11ClipboardBackend()
-                backend.clipboard_changed.connect(
-                    lambda text, sensitive: capture.capture(text, sensitive=sensitive)
+            backend.clipboard_changed.connect(
+                lambda text, sensitive: capture.capture(text, sensitive=sensitive)
+            )
+            backend.image_changed.connect(
+                lambda data, mime_type, sensitive: capture.capture_image(
+                    data, mime_type, sensitive=sensitive
                 )
-                backend.start()
+            )
+            backend.start()
             app.aboutToQuit.connect(backend.stop)
             LOGGER.info("Daemon started")
             return app.exec()

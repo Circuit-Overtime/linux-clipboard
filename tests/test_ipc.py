@@ -8,6 +8,8 @@ import sys
 import time
 
 import pytest
+from PySide6.QtCore import QBuffer, QIODevice
+from PySide6.QtGui import QColor, QImage
 
 from win_dot_panel.ipc.client import send_command
 from win_dot_panel.ipc.protocol import decode_message, encode_message
@@ -83,14 +85,35 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path, monkeypatch):
                     check=False,
                 )
                 assert sensitive.returncode == 0
+                image = QImage(3, 3, QImage.Format.Format_ARGB32)
+                image.fill(QColor("green"))
+                buffer = QBuffer()
+                buffer.open(QIODevice.OpenModeFlag.WriteOnly)
+                assert image.save(buffer, "PNG")
+                screenshot = subprocess.run(
+                    [*command[:2], "win_dot_panel.clipboard.watch_event"],
+                    input=bytes(buffer.data()),
+                    env=dict(env, CLIPBOARD_STATE="data", CLIPBOARD_TYPE="image/png"),
+                    capture_output=True,
+                    timeout=5,
+                    check=False,
+                )
+                assert screenshot.returncode == 0, screenshot.stderr
             result = cli(action)
             assert result.returncode == 0, (action, result.stderr)
         assert daemon.wait(timeout=3) == 0
         assert (tmp_path / "data" / "win-dot-panel" / "panel.db").is_file()
         with sqlite3.connect(tmp_path / "data" / "win-dot-panel" / "panel.db") as connection:
             assert connection.execute(
-                "SELECT text_content, use_count FROM clipboard_items"
+                "SELECT text_content, use_count FROM clipboard_items WHERE content_type = 'text'"
             ).fetchall() == [("copied from browser", 2)]
+            assert (
+                connection.execute(
+                    "SELECT count(*) FROM clipboard_items WHERE content_type = 'image' "
+                    "AND length(image_content) > 0"
+                ).fetchone()[0]
+                == 1
+            )
 
         # A shortcut must also work when the daemon was not already running.
         result = cli("toggle")
