@@ -9,6 +9,7 @@ on:
     paths:
       - 'src/**'
       - 'scripts/**'
+      - 'web/**'
       - 'pyproject.toml'
       - 'LICENSE'
       - 'tests/**'
@@ -44,9 +45,16 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: |
-          gh release create "${{ needs.package.outputs.release_tag }}" dist/win-dot-panel_*.deb dist/SHA256SUMS \
-            --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
+          test -n "$APT_SIGNING_KEY" || { echo 'APT_SIGNING_KEY is required for stable releases' >&2; exit 1; }
+          if gh release view "${{ needs.package.outputs.release_tag }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "${{ needs.package.outputs.release_tag }}" dist/win-dot-panel_*.deb dist/SHA256SUMS \
+              --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "${{ needs.package.outputs.release_tag }}" dist/win-dot-panel_*.deb dist/SHA256SUMS \
+              --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
       - name: Publish main prerelease
         if: github.ref_type == 'branch'
         env:
@@ -58,9 +66,8 @@ jobs:
             --notes "Development build from main commit ${GITHUB_SHA}." \
             --repo "$GITHUB_REPOSITORY"
 
-  apt_repository:
-    name: Publish signed APT repository
-    if: github.ref_type == 'tag'
+  pages:
+    name: Publish package site and APT repository
     needs: [package, publish]
     runs-on: ubuntu-24.04
     permissions:
@@ -78,22 +85,57 @@ jobs:
           path: dist
       - name: Verify downloaded package
         run: cd dist && sha256sum -c SHA256SUMS
+      - name: Prepare product page
+        run: mkdir -p site && cp -R web/. site/
+      - name: Check APT signing configuration
+        id: signing
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          if [[ -n "$APT_SIGNING_KEY" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo 'APT_SIGNING_KEY is required for stable releases' >&2
+            exit 1
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download latest stable package for main builds
+        if: github.ref_type == 'branch' && steps.signing.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          stable_tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          mkdir -p stable-dist
+          gh release download "$stable_tag" --repo "$GITHUB_REPOSITORY" \
+            -p 'win-dot-panel_*_all.deb' -p 'SHA256SUMS' -D stable-dist
+          (cd stable-dist && sha256sum -c SHA256SUMS)
       - name: Install repository tools
+        if: steps.signing.outputs.enabled == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev gnupg
       - name: Build signed repository
+        if: steps.signing.outputs.enabled == 'true'
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: |
-          test -n "$APT_SIGNING_KEY"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            package=(dist/win-dot-panel_*.deb)
+          else
+            package=(stable-dist/win-dot-panel_*.deb)
+          fi
+          test -f "${package[0]}"
           export GNUPGHOME="$RUNNER_TEMP/win-dot-panel-gnupg"
           mkdir -m 700 "$GNUPGHOME"
           printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
-          bash scripts/build_apt_repo.sh dist/win-dot-panel_*.deb site
+          bash scripts/build_apt_repo.sh "${package[0]}" site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: site
       - id: deploy
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}

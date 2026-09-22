@@ -19,6 +19,7 @@ REQUIRED = {
     "win_dot_panel/storage/schema.sql",
     "win_dot_panel/storage/migration_002_emoji_fts.sql",
     "win_dot_panel/storage/migration_003_clipboard_images.sql",
+    "win_dot_panel/storage/migration_004_emoji_recents.sql",
     "win_dot_panel/text_picker/data.py",
     "win_dot_panel/ui/popup.py",
 }

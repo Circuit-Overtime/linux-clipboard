@@ -77,7 +77,8 @@ class EmojiRepository:
             """
             SELECT emoji.* FROM emoji
             JOIN emoji_usage ON emoji_usage.emoji_id = emoji.id
-            ORDER BY emoji_usage.last_used_at DESC, emoji_usage.emoji_id DESC
+            ORDER BY emoji_usage.last_used_at DESC, emoji_usage.use_count DESC,
+                     emoji_usage.emoji_id DESC
             LIMIT ?
             """,
             (limit,),

@@ -40,7 +40,7 @@ The [release workflow](../.github/workflows/release-deb.yml) builds a Debian pac
 
 Package-related pushes to `main` also publish numbered prereleases. Their Debian version includes `~main.<run number>`, so regular releases remain newer for APT. Documentation-only pushes do not publish a package.
 
-Stable tags also publish a [signed APT repository](apt-repository.md) after Pages and the signing key are configured. The repository index contains the validated stable package; main prereleases remain GitHub release assets.
+Main pushes publish the [product page](../web/index.html) through GitHub Pages. After the signing key is configured, main deployments include the latest stable [signed APT repository](apt-repository.md), while stable tags publish the newly validated package. Main prereleases remain GitHub release assets.
 
 The package can be installed from GitHub Releases without an APT repository. Copy the `.deb` to `/var/tmp` with mode `644` before `sudo apt install` so APT's `_apt` user can read it. An APT repository would be needed for automatic package-manager updates.
 
