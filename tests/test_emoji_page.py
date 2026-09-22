@@ -25,6 +25,9 @@ def test_selection_inserts_emoji_and_keeps_panel_open(tmp_path, monkeypatch):
     assert panel.isVisible()
 
     panel.emoji_page.set_query("")
+    assert panel.emoji_page.recent_heading.isVisible()
+    assert panel.emoji_page.recent_model.records[0].emoji == "🚀"
+    assert panel.emoji_page.grid.gridSize().width() == 52
     panel.emoji_page.category.setCurrentText("Recent")
     assert panel.emoji_page.model.records[0].emoji == "🚀"
     panel.close()

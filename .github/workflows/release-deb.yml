@@ -9,6 +9,7 @@ on:
     paths:
       - 'src/**'
       - 'scripts/**'
+      - 'web/**'
       - 'pyproject.toml'
       - 'LICENSE'
       - 'tests/**'
@@ -58,9 +59,8 @@ jobs:
             --notes "Development build from main commit ${GITHUB_SHA}." \
             --repo "$GITHUB_REPOSITORY"
 
-  apt_repository:
-    name: Publish signed APT repository
-    if: github.ref_type == 'tag'
+  pages:
+    name: Publish package site and APT repository
     needs: [package, publish]
     runs-on: ubuntu-24.04
     permissions:
@@ -78,6 +78,19 @@ jobs:
           path: dist
       - name: Verify downloaded package
         run: cd dist && sha256sum -c SHA256SUMS
+      - name: Prepare product page
+        run: mkdir -p site && cp -R web/. site/
+      - name: Download latest stable package for main builds
+        if: github.ref_type == 'branch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          stable_tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
+          if [[ -n "$stable_tag" ]]; then
+            mkdir -p stable-dist
+            gh release download "$stable_tag" --repo "$GITHUB_REPOSITORY" \
+              -p 'win-dot-panel_*_all.deb' -D stable-dist
+          fi
       - name: Install repository tools
         run: |
           sudo apt-get update
@@ -86,11 +99,27 @@ jobs:
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: |
-          test -n "$APT_SIGNING_KEY"
+          if [[ -z "$APT_SIGNING_KEY" ]]; then
+            if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+              echo 'APT_SIGNING_KEY is required for stable releases' >&2
+              exit 1
+            fi
+            echo 'Signing key not configured; deploying product page only'
+            exit 0
+          fi
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            package=(dist/win-dot-panel_*.deb)
+          else
+            package=(stable-dist/win-dot-panel_*.deb)
+            if [[ ! -f "${package[0]}" ]]; then
+              echo 'No stable release is available; deploying product page only'
+              exit 0
+            fi
+          fi
           export GNUPGHOME="$RUNNER_TEMP/win-dot-panel-gnupg"
           mkdir -m 700 "$GNUPGHOME"
           printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
-          bash scripts/build_apt_repo.sh dist/win-dot-panel_*.deb site
+          bash scripts/build_apt_repo.sh "${package[0]}" site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

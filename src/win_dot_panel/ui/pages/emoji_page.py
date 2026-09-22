@@ -23,6 +23,8 @@ from win_dot_panel.storage.repositories.emoji_repository import EmojiRepository
 from win_dot_panel.ui.widgets.category_combo import CategoryComboBox
 
 PAGE_SIZE = 200
+RECENT_SIZE = 8
+CELL_SIZE = QSize(52, 52)
 
 
 class EmojiListModel(QAbstractListModel):
@@ -75,14 +77,14 @@ class EmojiDelegate(QStyledItemDelegate):
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(option.rect.adjusted(2, 2, -2, -2), 12, 12)
         font = QFont(option.font)
-        font.setPointSize(24)
+        font.setPointSize(20)
         painter.setFont(font)
         painter.setPen(QColor("#f4f4f6" if self.dark else "#20232b"))
         painter.drawText(option.rect, Qt.AlignmentFlag.AlignCenter, str(index.data()))
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
-        return QSize(56, 58)
+        return CELL_SIZE
 
 
 class EmojiGrid(QListView):
@@ -105,7 +107,29 @@ class EmojiPage(QWidget):
         self.query = ""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(8)
+
+        self.recent_heading = QLabel("Recent")
+        self.recent_heading.setObjectName("emojiHeading")
+        layout.addWidget(self.recent_heading)
+        self.recent_model = EmojiListModel()
+        self.recent_grid = EmojiGrid()
+        self.recent_grid.setObjectName("emojiGrid")
+        self.recent_grid.setAccessibleName("Recently used emoji")
+        self.recent_grid.setModel(self.recent_model)
+        self.recent_grid.setItemDelegate(EmojiDelegate(dark, self.recent_grid))
+        self.recent_grid.setViewMode(QListView.ViewMode.IconMode)
+        self.recent_grid.setFlow(QListView.Flow.LeftToRight)
+        self.recent_grid.setWrapping(False)
+        self.recent_grid.setMovement(QListView.Movement.Static)
+        self.recent_grid.setGridSize(CELL_SIZE)
+        self.recent_grid.setUniformItemSizes(True)
+        self.recent_grid.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.recent_grid.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.recent_grid.setFixedHeight(CELL_SIZE.height() + 4)
+        self.recent_grid.clicked.connect(self.select_recent_index)
+        self.recent_grid.selected.connect(self.select_recent_index)
+        layout.addWidget(self.recent_grid)
 
         heading = QHBoxLayout()
         title = QLabel("Browse")
@@ -130,7 +154,7 @@ class EmojiPage(QWidget):
         self.grid.setWrapping(True)
         self.grid.setResizeMode(QListView.ResizeMode.Adjust)
         self.grid.setMovement(QListView.Movement.Static)
-        self.grid.setGridSize(QSize(56, 58))
+        self.grid.setGridSize(CELL_SIZE)
         self.grid.setUniformItemSizes(True)
         self.grid.setVerticalScrollMode(QListView.ScrollMode.ScrollPerPixel)
         self.grid.clicked.connect(self.select_index)
@@ -152,12 +176,18 @@ class EmojiPage(QWidget):
         self.category.set_dark(dark)
         self.grid.itemDelegate().dark = dark
         self.grid.viewport().update()
+        self.recent_grid.itemDelegate().dark = dark
+        self.recent_grid.viewport().update()
 
     def set_query(self, text: str) -> None:
         self.query = text.strip()
         self.refresh()
 
     def refresh(self) -> None:
+        recent = self.repository.list_recent(limit=RECENT_SIZE) if not self.query else []
+        self.recent_model.replace(recent)
+        self.recent_heading.setVisible(bool(recent))
+        self.recent_grid.setVisible(bool(recent))
         category = self.category.currentText()
         if self.query:
             filter_category = category if category not in ("All", "Recent") else None
@@ -196,6 +226,13 @@ class EmojiPage(QWidget):
     def select_index(self, index: QModelIndex) -> None:
         if not index.isValid():
             return
-        record = self.model.records[index.row()]
-        self.repository.record_usage(record.id, timestamp=int(time.time()))
+        self._select_record(self.model.records[index.row()])
+
+    def select_recent_index(self, index: QModelIndex) -> None:
+        if index.isValid():
+            self._select_record(self.recent_model.records[index.row()])
+
+    def _select_record(self, record: EmojiRecord) -> None:
+        self.repository.record_usage(record.id, timestamp=time.time_ns())
+        self.refresh()
         self.emoji_selected.emit(record.emoji)
