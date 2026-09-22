@@ -49,7 +49,28 @@ dpkg-deb --info dist/linux-dot-panel_*.deb
 dpkg-deb --contents dist/linux-dot-panel_*.deb
 ```
 
-The package installs the app for system Python and declares dependencies on `python3-pyside6.qtwidgets`, `python3-pyside6.qtnetwork`, `python3-gi`, the AT-SPI typelib, and `wl-clipboard`. Install a specific build with `sudo apt install ./dist/linux-dot-panel_0.1.0-1_all.deb` on a compatible Debian or Ubuntu system. Increase the package revision with `--revision 2` for a changed build of the same app version, then install that new `.deb` as an upgrade. It leaves your clipboard database and user configuration untouched; use `linux-dot-panel install` separately to enable login startup. Other distributions should use the wheel until their system packages are verified.
+The package installs the app for system Python and declares dependencies on `python3-pyside6.qtwidgets`, `python3-pyside6.qtnetwork`, `python3-gi`, the AT-SPI typelib, and `wl-clipboard`. Install a specific build with `sudo apt install ./dist/linux-dot-panel_0.1.0-3_all.deb` on a compatible Debian or Ubuntu system. Increase the package revision for a changed build of the same app version, then install that new `.deb` as an upgrade. It leaves your clipboard database and user configuration untouched; use `linux-dot-panel install` separately to enable login startup. Other distributions should use the wheel until their system packages are verified.
+
+### Publish and install from GitHub
+
+After committing a release, push a tag such as `v0.1.0-3`. The [release workflow](.github/workflows/release-deb.yml) builds the wheel and `.deb` on GitHub and attaches the package and checksum to a GitHub Release. It does not use your local `dist` directory. The tag's version must match `pyproject.toml`, and its suffix becomes the Debian revision.
+
+```bash
+git tag v0.1.0-3
+git push origin v0.1.0-3
+```
+
+Once the release workflow succeeds, install the published package without an APT repository:
+
+```bash
+curl -fL -o /var/tmp/linux-dot-panel_0.1.0-3_all.deb https://github.com/Circuit-Overtime/linux-clipboard/releases/download/v0.1.0-3/linux-dot-panel_0.1.0-3_all.deb
+curl -fL -o /var/tmp/SHA256SUMS https://github.com/Circuit-Overtime/linux-clipboard/releases/download/v0.1.0-3/SHA256SUMS
+(cd /var/tmp && sha256sum -c SHA256SUMS)
+chmod 644 /var/tmp/linux-dot-panel_0.1.0-3_all.deb
+sudo apt install /var/tmp/linux-dot-panel_0.1.0-3_all.deb
+```
+
+APT downloads dependencies from the configured Ubuntu or Debian repositories. GitHub provides this application's `.deb`; updates are installed by downloading a newer release. Using `/var/tmp` also lets APT's `_apt` user read the file, avoiding the permission notice caused by private home directory permissions.
 
 Clipboard history is stored locally. The application does not use a remote service for its core features.
 

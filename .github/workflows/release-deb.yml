@@ -1,0 +1,44 @@
+name: Publish Debian package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Check release tag
+        id: version
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          revision="${GITHUB_REF_NAME##*-}"
+          if [[ ! "$revision" =~ ^[1-9][0-9]*$ || "$GITHUB_REF_NAME" != "v${version}-${revision}" ]]; then
+            echo "Tag must match v${version}-<positive Debian revision>" >&2
+            exit 1
+          fi
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - name: Build wheel
+        run: |
+          python -m pip install 'build>=1,<2'
+          python -m build --wheel --outdir dist
+          python scripts/check-wheel.py dist/linux_dot_panel-*.whl
+      - name: Build Debian package
+        run: |
+          python scripts/build_deb.py dist/linux_dot_panel-*.whl --revision "${{ steps.version.outputs.revision }}"
+          cd dist
+          sha256sum linux-dot-panel_*.deb > SHA256SUMS
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/linux-dot-panel_*.deb dist/SHA256SUMS \
+            --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"

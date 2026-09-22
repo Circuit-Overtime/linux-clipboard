@@ -82,7 +82,7 @@ class EmojiDelegate(QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
-        return QSize(58, 58)
+        return QSize(56, 58)
 
 
 class EmojiGrid(QListView):
@@ -130,7 +130,7 @@ class EmojiPage(QWidget):
         self.grid.setWrapping(True)
         self.grid.setResizeMode(QListView.ResizeMode.Adjust)
         self.grid.setMovement(QListView.Movement.Static)
-        self.grid.setGridSize(QSize(58, 58))
+        self.grid.setGridSize(QSize(56, 58))
         self.grid.setUniformItemSizes(True)
         self.grid.setVerticalScrollMode(QListView.ScrollMode.ScrollPerPixel)
         self.grid.clicked.connect(self.select_index)

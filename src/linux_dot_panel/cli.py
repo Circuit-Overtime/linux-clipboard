@@ -41,7 +41,7 @@ def _run_command(command: str) -> int:
         except OSError:
             try:
                 _start_daemon()
-                response = send_command("show")
+                response = send_command("show", timeout=3.0)
             except (OSError, RuntimeError) as error:
                 print(error, file=sys.stderr)
                 return 1
