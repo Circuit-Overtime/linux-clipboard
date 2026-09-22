@@ -34,13 +34,13 @@ The wheel includes the offline emoji dataset, SQL migrations, and CLI entry poin
 
 ## Publish a release
 
-The [release workflow](../.github/workflows/release-deb.yml) builds a Debian package from a `v<version>-<revision>` tag. It calls separate [code checks](../.github/workflows/checks.yml) and [package validation](../.github/workflows/package.yml) workflows before publishing. For the current project version, the next stable tag should use a revision greater than `3`. These checks cover lint and formatting, tests, the wheel, Debian package contents and metadata, and its checksum. A failed check prevents the release. The version in the tag must match `pyproject.toml`.
+The [release workflow](../.github/workflows/release-deb.yml) builds a Debian package from a `v<version>-<revision>` tag. It calls separate [code checks](../.github/workflows/checks.yml) and [package validation](../.github/workflows/package.yml) workflows before publishing. Use the version in `pyproject.toml`. For another release of that version, increment the Debian revision from the [latest stable release](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest); for a new project version, start the revision at `1`. These checks cover lint and formatting, tests, the wheel, Debian package contents and metadata, and its checksum. A failed check prevents the release.
 
 Package-related pushes to `main` also publish numbered prereleases. Their Debian version includes `~main.<run number>`, so regular releases remain newer for APT. Documentation-only pushes do not publish a package.
 
 Main pushes publish the [product page](../web/index.html) through GitHub Pages. After the signing key is configured, main deployments include the latest stable [signed APT repository](apt-repository.md), while stable tags publish the newly validated package. Main prereleases remain GitHub release assets.
 
-The package can be installed from GitHub Releases without an APT repository. Copy the `.deb` to `/var/tmp` with mode `644` before `sudo apt install` so APT's `_apt` user can read it. An APT repository would be needed for automatic package-manager updates.
+The signed APT repository is the normal installation path; see the [APT guide](apt-repository.md). A GitHub release `.deb` can also be installed directly. Copy it to `/var/tmp` with mode `644` before `sudo apt install` so APT's `_apt` user can read it.
 
 The offline emoji data is generated from [Unicode Emoji 18.0](https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt) and [Unicode CLDR English annotations](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-annotations-full/annotations/en/annotations.json). It is distributed under the [Unicode License v3](../src/win_dot_panel/resources/UNICODE-LICENSE.txt).
 

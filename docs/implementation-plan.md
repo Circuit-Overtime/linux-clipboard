@@ -1,5 +1,8 @@
 # Win Dot Panel
+
 ## Agent-Ready Implementation Plan
+
+This is the original design plan. For current installation and update commands, use the [README](../README.md) and [APT repository guide](apt-repository.md).
 
 **Working concept:** A lightweight Linux equivalent of the Windows `Win + .` panel, focused on GNOME and KDE Plasma.
 

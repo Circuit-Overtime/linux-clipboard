@@ -2,6 +2,8 @@
 
 Win Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `/usr/bin/win-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
 
+Starting with package version `0.1.0-5`, Win Dot Panel also appears in the app menu, so you can open it before setting shortcuts.
+
 For a separate clipboard shortcut, assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard`. It opens the Clipboard tab, switches to it from another tab, or closes the panel when Clipboard is already open.
 
 ## Choose the command
@@ -42,11 +44,11 @@ See the [KDE Shortcuts module](https://docs.kde.org/stable_kf6/en/plasma-desktop
 
 ## Check the shortcut
 
-1. Run `win-dot-panel quit` to stop any existing daemon.
+1. Run `/usr/bin/win-dot-panel quit` to stop any existing daemon. A "Daemon is not running" message is harmless.
 2. Press the shortcut once. The panel should appear with search focused; this also tests cold start.
 3. Press the shortcut again. The same panel should hide. Press it once more to reopen, then press **Esc** to close.
-4. In a terminal, run `win-dot-panel status`; it should print `running`.
-5. Run `win-dot-panel quit` when done.
+4. In a terminal, run `/usr/bin/win-dot-panel status`; it should print `running`.
+5. Run `/usr/bin/win-dot-panel quit` when done.
 
 The shortcut command should use the same executable as the terminal commands. If the terminal command works but the shortcut does not, use its absolute path as shown above.
 

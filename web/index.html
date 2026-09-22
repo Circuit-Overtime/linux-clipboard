@@ -167,19 +167,22 @@
           <div class="install-card">
             <h3>APT repository</h3><p>Add the signed repository once. After that, normal APT updates include Win Dot Panel.</p>
             <div class="status" id="apt-status" role="status">Checking repository availability…</div>
-            <div class="code-box"><pre id="apt-command">sudo install -d -m 755 /etc/apt/keyrings
+            <div class="code-box"><pre id="apt-command">sudo apt update
+sudo apt install curl gnupg
+sudo install -d -m 755 /etc/apt/keyrings
 curl -fsSL -o /var/tmp/win-dot-panel-apt.asc https://packages.elixpo.com/apt/keyring.asc
 sudo gpg --dearmor --yes -o /etc/apt/keyrings/win-dot-panel.gpg /var/tmp/win-dot-panel-apt.asc
 echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://packages.elixpo.com/apt/ ./' | sudo tee /etc/apt/sources.list.d/win-dot-panel.list
 sudo apt update
-sudo apt install win-dot-panel</pre><button class="copy" data-copy="apt-command" aria-label="Copy APT install commands">Copy</button></div>
-            <div class="code-box" style="margin-top:12px"><pre id="update-command">sudo apt update &amp;&amp; sudo apt upgrade</pre><button class="copy" data-copy="update-command" aria-label="Copy update command">Copy</button></div>
+sudo apt install win-dot-panel
+apt-cache policy win-dot-panel</pre><button class="copy" data-copy="apt-command" aria-label="Copy APT install commands">Copy</button></div>
+            <div class="code-box" style="margin-top:12px"><pre id="update-command">sudo apt update &amp;&amp; sudo apt install --only-upgrade win-dot-panel</pre><button class="copy" data-copy="update-command" aria-label="Copy update command">Copy</button></div>
           </div>
           <div class="install-card">
             <h3>GitHub release</h3><p>Download the latest stable <code>.deb</code> file from GitHub and open it with your package installer, or use APT on the downloaded file.</p>
             <a class="button secondary" href="https://github.com/Circuit-Overtime/linux-clipboard/releases/latest">Open latest release ↗</a>
             <p style="margin-top:25px">To keep clipboard history running after sign-in:</p>
-            <div class="code-box"><pre id="startup-command">win-dot-panel install</pre><button class="copy" data-copy="startup-command" aria-label="Copy startup command">Copy</button></div>
+            <div class="code-box"><pre id="startup-command">/usr/bin/win-dot-panel install</pre><button class="copy" data-copy="startup-command" aria-label="Copy startup command">Copy</button></div>
             <a class="small-link" href="https://github.com/Circuit-Overtime/linux-clipboard/blob/main/docs/shortcuts.md">Shortcut setup guide ↗</a>
           </div>
         </div>

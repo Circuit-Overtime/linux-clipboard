@@ -24,9 +24,11 @@ The product page is published at `https://packages.elixpo.com/`, with stable pac
    Keep a secure backup of that directory. The private key must never be committed to Git.
 5. Push to `main` to deploy the product page. Once the signing key exists, the workflow also publishes the latest stable package to APT. Push a new stable `v<project-version>-<revision>` tag to publish that validated package as a GitHub release and update the signed repository. Confirm that the homepage, `/apt/InRelease`, `/apt/Packages.gz`, the `.deb`, and `/apt/keyring.asc` are available before relying on APT installation.
 
-## Install from APT after the first deployment
+## Install from APT
 
 ```bash
+sudo apt update
+sudo apt install curl gnupg
 sudo install -d -m 755 /etc/apt/keyrings
 curl -fsSL -o /var/tmp/win-dot-panel-apt.asc \
   https://packages.elixpo.com/apt/keyring.asc
@@ -36,6 +38,7 @@ echo 'deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] https://packages.elixp
   sudo tee /etc/apt/sources.list.d/win-dot-panel.list
 sudo apt update
 sudo apt install win-dot-panel
+apt-cache policy win-dot-panel
 ```
 
-Later stable updates use `sudo apt update && sudo apt upgrade`. The key is scoped to this repository through `signed-by`; it is not added to APT's global trusted keyring. The GitHub updater command remains available for development builds.
+Run the repository setup once. Later stable updates use `sudo apt update` followed by `sudo apt install --only-upgrade win-dot-panel`. The key is scoped to this repository through `signed-by`; it is not added to APT's global trusted keyring. The GitHub updater command remains available for development builds.
