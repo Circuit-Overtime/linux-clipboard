@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QApplication
 
-from linux_dot_panel.config import Settings
-from linux_dot_panel.emoji.importer import ensure_emoji_dataset
-from linux_dot_panel.storage.database import open_database
-from linux_dot_panel.ui.popup import PopupPanel
+from win_dot_panel.config import Settings
+from win_dot_panel.emoji.importer import ensure_emoji_dataset
+from win_dot_panel.storage.database import open_database
+from win_dot_panel.ui.popup import PopupPanel
 
 
 def test_selection_inserts_emoji_and_keeps_panel_open(tmp_path, monkeypatch):

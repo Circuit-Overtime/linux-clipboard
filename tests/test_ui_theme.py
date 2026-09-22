@@ -3,8 +3,8 @@ from __future__ import annotations
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
-from linux_dot_panel.config import Settings
-from linux_dot_panel.ui.popup import PopupPanel
+from win_dot_panel.config import Settings
+from win_dot_panel.ui.popup import PopupPanel
 
 
 def test_system_theme_updates_open_pages(monkeypatch):

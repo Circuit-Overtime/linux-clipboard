@@ -4,8 +4,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
-from linux_dot_panel.config import Settings
-from linux_dot_panel.ui.popup import PopupPanel
+from win_dot_panel.config import Settings
+from win_dot_panel.ui.popup import PopupPanel
 
 
 def test_kaomoji_search_and_insert_keeps_panel_open(monkeypatch):

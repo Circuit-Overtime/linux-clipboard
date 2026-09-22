@@ -11,8 +11,8 @@ from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from zipfile import BadZipFile, ZipFile
 
-PACKAGE = "linux-dot-panel"
-MODULE = "linux_dot_panel"
+PACKAGE = "win-dot-panel"
+MODULE = "win_dot_panel"
 PYTHON_DIR = Path("usr/lib/python3/dist-packages")
 DEPENDENCIES = (
     "python3 (>= 3.10), python3-pyside6.qtwidgets (>= 6.6), "
@@ -29,7 +29,7 @@ def _wheel_version(wheel: ZipFile) -> str:
         raise ValueError("Expected one wheel metadata directory")
     metadata = Parser().parsestr(wheel.read(metadata_files[0]).decode("utf-8"))
     if metadata.get("Name", "").lower().replace("_", "-") != PACKAGE:
-        raise ValueError("Wheel package name does not match linux-dot-panel")
+        raise ValueError("Wheel package name does not match win-dot-panel")
     version = metadata.get("Version", "")
     if not re.fullmatch(r"[0-9][A-Za-z0-9.+~]*", version):
         raise ValueError(f"Unsupported Debian package version: {version}")
@@ -93,14 +93,14 @@ def build_deb(wheel_path: Path, output_dir: Path, *, revision: int = 1) -> Path:
         version = _wheel_version(wheel)
         destination = output_dir / f"{PACKAGE}_{version}-{revision}_all.deb"
         output_dir.mkdir(parents=True, exist_ok=True)
-        with TemporaryDirectory(prefix="linux-dot-panel-deb-") as temporary:
+        with TemporaryDirectory(prefix="win-dot-panel-deb-") as temporary:
             stage = Path(temporary)
             _copy_module(wheel, stage)
             launcher = stage / "usr/bin" / PACKAGE
-            launcher.parent.mkdir(parents=True)
+            launcher.parent.mkdir(parents=True, exist_ok=True)
             launcher.write_text(
                 "#!/usr/bin/python3\n"
-                "from linux_dot_panel.cli import main\n"
+                "from win_dot_panel.cli import main\n"
                 "raise SystemExit(main())\n",
                 encoding="utf-8",
             )
@@ -115,7 +115,7 @@ def build_deb(wheel_path: Path, output_dir: Path, *, revision: int = 1) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("wheel", type=Path, help="Verified linux-dot-panel .whl file")
+    parser.add_argument("wheel", type=Path, help="Verified win-dot-panel .whl file")
     parser.add_argument("--output-dir", type=Path, default=Path("dist"))
     parser.add_argument("--revision", type=int, default=1, help="Debian package revision")
     args = parser.parse_args()

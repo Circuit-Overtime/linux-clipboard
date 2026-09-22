@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from linux_dot_panel.desktop import autostart
+from win_dot_panel.desktop import autostart
 
 
 def test_xdg_install_and_uninstall_uses_current_python(tmp_path, monkeypatch):
@@ -14,8 +14,8 @@ def test_xdg_install_and_uninstall_uses_current_python(tmp_path, monkeypatch):
 
     path = autostart.install()
     content = path.read_text(encoding="utf-8")
-    assert path == tmp_path / "autostart" / "linux-dot-panel.desktop"
-    assert f'Exec="{python}" -m linux_dot_panel daemon' in content
+    assert path == tmp_path / "autostart" / "win-dot-panel.desktop"
+    assert f'Exec="{python}" -m win_dot_panel daemon' in content
     assert "Terminal=false" in content
     assert autostart.uninstall() == [path]
     assert not path.exists()
@@ -23,7 +23,7 @@ def test_xdg_install_and_uninstall_uses_current_python(tmp_path, monkeypatch):
 
 def test_install_does_not_replace_unmanaged_file(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-    path = tmp_path / "autostart" / "linux-dot-panel.desktop"
+    path = tmp_path / "autostart" / "win-dot-panel.desktop"
     path.parent.mkdir(parents=True)
     path.write_text("[Desktop Entry]\nName=Custom\n", encoding="utf-8")
 
@@ -47,14 +47,14 @@ def test_systemd_install_and_uninstall(tmp_path, monkeypatch):
     path = autostart.install("systemd")
     content = path.read_text(encoding="utf-8")
     assert "WantedBy=graphical-session.target" in content
-    assert " -m linux_dot_panel daemon" in content
+    assert " -m win_dot_panel daemon" in content
     assert calls == [
         ["systemctl", "--user", "daemon-reload"],
-        ["systemctl", "--user", "enable", "linux-dot-panel.service"],
+        ["systemctl", "--user", "enable", "win-dot-panel.service"],
     ]
     assert autostart.uninstall() == [path]
     assert not path.exists()
     assert calls[-2:] == [
-        ["systemctl", "--user", "disable", "--now", "linux-dot-panel.service"],
+        ["systemctl", "--user", "disable", "--now", "win-dot-panel.service"],
         ["systemctl", "--user", "daemon-reload"],
     ]

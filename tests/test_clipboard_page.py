@@ -4,10 +4,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
-from linux_dot_panel.config import Settings
-from linux_dot_panel.storage.database import open_database
-from linux_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
-from linux_dot_panel.ui.popup import PopupPanel
+from win_dot_panel.config import Settings
+from win_dot_panel.storage.database import open_database
+from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
+from win_dot_panel.ui.popup import PopupPanel
 
 
 def test_clipboard_page_search_manage_copy_and_pagination(tmp_path, monkeypatch):

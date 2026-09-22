@@ -9,17 +9,17 @@ from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 REQUIRED = {
-    "linux_dot_panel/__init__.py",
-    "linux_dot_panel/__main__.py",
-    "linux_dot_panel/cli.py",
-    "linux_dot_panel/daemon.py",
-    "linux_dot_panel/desktop/autostart.py",
-    "linux_dot_panel/resources/emoji.json",
-    "linux_dot_panel/resources/UNICODE-LICENSE.txt",
-    "linux_dot_panel/storage/schema.sql",
-    "linux_dot_panel/storage/migration_002_emoji_fts.sql",
-    "linux_dot_panel/text_picker/data.py",
-    "linux_dot_panel/ui/popup.py",
+    "win_dot_panel/__init__.py",
+    "win_dot_panel/__main__.py",
+    "win_dot_panel/cli.py",
+    "win_dot_panel/daemon.py",
+    "win_dot_panel/desktop/autostart.py",
+    "win_dot_panel/resources/emoji.json",
+    "win_dot_panel/resources/UNICODE-LICENSE.txt",
+    "win_dot_panel/storage/schema.sql",
+    "win_dot_panel/storage/migration_002_emoji_fts.sql",
+    "win_dot_panel/text_picker/data.py",
+    "win_dot_panel/ui/popup.py",
 }
 
 
@@ -36,14 +36,14 @@ def check_wheel(path: Path) -> None:
             raise ValueError("Wheel must have one METADATA and entry_points.txt file")
 
         metadata = Parser().parsestr(wheel.read(metadata_files[0]).decode("utf-8"))
-        if metadata.get("Name", "").lower().replace("_", "-") != "linux-dot-panel":
+        if metadata.get("Name", "").lower().replace("_", "-") != "win-dot-panel":
             raise ValueError("Unexpected package name")
         if not any("pyside6" in value.lower() for value in metadata.get_all("Requires-Dist", [])):
             raise ValueError("PySide6 dependency is missing")
 
         entry_points = wheel.read(entry_files[0]).decode("utf-8")
-        if "linux-dot-panel = linux_dot_panel.cli:main" not in entry_points:
-            raise ValueError("CLI entry point is missing")
+        if "win-dot-panel = win_dot_panel.cli:main" not in entry_points:
+            raise ValueError("win-dot-panel CLI entry point is missing")
 
 
 def main() -> int:

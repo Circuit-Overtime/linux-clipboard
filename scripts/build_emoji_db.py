@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 VERSION = "18.0"
-DEFAULT_OUTPUT = Path(__file__).resolve().parents[1] / "src/linux_dot_panel/resources/emoji.json"
+DEFAULT_OUTPUT = Path(__file__).resolve().parents[1] / "src/win_dot_panel/resources/emoji.json"
 SKIN_TONES = set(range(0x1F3FB, 0x1F400))
 EMOJI_LINE = re.compile(r"^([0-9A-F ]+)\s*; fully-qualified\s*#\s*\S+\s+E[0-9.]+\s+(.+)$")
 

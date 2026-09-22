@@ -3,14 +3,14 @@ from __future__ import annotations
 import sqlite3
 from importlib.resources import files
 
-from linux_dot_panel.emoji.importer import ensure_emoji_dataset
-from linux_dot_panel.storage.database import open_database
+from win_dot_panel.emoji.importer import ensure_emoji_dataset
+from win_dot_panel.storage.database import open_database
 
 
 def test_version_one_database_migrates_without_losing_data(tmp_path):
     path = tmp_path / "panel.db"
     connection = sqlite3.connect(path)
-    schema = files("linux_dot_panel.storage").joinpath("schema.sql").read_text(encoding="utf-8")
+    schema = files("win_dot_panel.storage").joinpath("schema.sql").read_text(encoding="utf-8")
     connection.executescript(schema)
     connection.execute("INSERT INTO settings (key, value) VALUES ('keep', 'yes')")
     connection.commit()

@@ -3,7 +3,7 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "linux-dot-panel"
+name = "win-dot-panel"
 version = "0.1.0"
 description = "A keyboard-first emoji and clipboard panel for Linux"
 readme = "README.md"
@@ -15,14 +15,14 @@ dev = ["pytest>=8", "ruff>=0.6"]
 insert = ["PyGObject>=3.42"]
 
 [project.scripts]
-linux-dot-panel = "linux_dot_panel.cli:main"
+win-dot-panel = "win_dot_panel.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"linux_dot_panel.storage" = ["*.sql"]
-"linux_dot_panel.resources" = ["emoji.json", "UNICODE-LICENSE.txt"]
+"win_dot_panel.storage" = ["*.sql"]
+"win_dot_panel.resources" = ["emoji.json", "UNICODE-LICENSE.txt"]
 
 [tool.ruff]
 target-version = "py310"

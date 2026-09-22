@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from linux_dot_panel.config import Settings
+from win_dot_panel.config import Settings
 
 
 def test_settings_round_trip(tmp_path):

@@ -1,22 +1,22 @@
 # Keyboard shortcut setup
 
-Linux Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `linux-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
+Win Dot Panel uses the desktop's shortcut settings. The shortcut runs one small command, `win-dot-panel toggle`, which contacts the existing daemon or starts it when needed. The app does not register a global keyboard hook.
 
 ## Choose the command
 
 For an installed executable available to the desktop session, use:
 
 ```text
-linux-dot-panel toggle
+win-dot-panel toggle
 ```
 
 For a development install inside this repository's `.venv`, find the executable's absolute path while the environment is active:
 
 ```bash
-readlink -f "$(command -v linux-dot-panel)"
+readlink -f "$(command -v win-dot-panel)"
 ```
 
-Add ` toggle` to the printed path. For example, enter `/home/you/linux-clipboard/.venv/bin/linux-dot-panel toggle` in the shortcut editor. Use the actual printed path; desktop shortcut launchers may not have the PATH from your activated terminal.
+Add ` toggle` to the printed path. For example, enter `/home/you/linux-clipboard/.venv/bin/win-dot-panel toggle` in the shortcut editor. Use the actual printed path; desktop shortcut launchers may not have the PATH from your activated terminal.
 
 ## GNOME
 
@@ -38,11 +38,11 @@ See the [KDE Shortcuts module](https://docs.kde.org/stable_kf6/en/plasma-desktop
 
 ## Check the shortcut
 
-1. Run `linux-dot-panel quit` to stop any existing daemon.
+1. Run `win-dot-panel quit` to stop any existing daemon.
 2. Press the shortcut once. The panel should appear with search focused; this also tests cold start.
 3. Press the shortcut again. The same panel should hide. Press it once more to reopen, then press **Esc** to close.
-4. In a terminal, run `linux-dot-panel status`; it should print `running`.
-5. Run `linux-dot-panel quit` when done.
+4. In a terminal, run `win-dot-panel status`; it should print `running`.
+5. Run `win-dot-panel quit` when done.
 
 The shortcut command should use the same executable as the terminal commands. If the terminal command works but the shortcut does not, use its absolute path as shown above.
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from linux_dot_panel.clipboard.capture import MAX_TEXT_BYTES, ClipboardCapture
-from linux_dot_panel.storage.database import open_database
-from linux_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
+from win_dot_panel.clipboard.capture import MAX_TEXT_BYTES, ClipboardCapture
+from win_dot_panel.storage.database import open_database
+from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
 
 
 def test_capture_deduplicates_and_rejects_unsafe_text(tmp_path):

@@ -9,7 +9,7 @@ import time
 
 import pytest
 
-from linux_dot_panel.ipc.protocol import decode_message, encode_message
+from win_dot_panel.ipc.protocol import decode_message, encode_message
 
 
 def test_ipc_message_round_trip():
@@ -33,7 +33,7 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
         XDG_DATA_HOME=str(tmp_path / "data"),
         QT_QPA_PLATFORM="offscreen",
     )
-    command = [sys.executable, "-m", "linux_dot_panel"]
+    command = [sys.executable, "-m", "win_dot_panel"]
     daemon = subprocess.Popen([*command, "daemon"], env=env)
 
     def cli(action: str) -> subprocess.CompletedProcess[str]:
@@ -57,7 +57,7 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
             if action == "quit":
                 for value in (b"copied from browser", b"copied from browser"):
                     event = subprocess.run(
-                        [*command[:2], "linux_dot_panel.clipboard.watch_event"],
+                        [*command[:2], "win_dot_panel.clipboard.watch_event"],
                         input=value,
                         env=dict(env, CLIPBOARD_STATE="data"),
                         capture_output=True,
@@ -66,7 +66,7 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
                     )
                     assert event.returncode == 0, event.stderr
                 sensitive = subprocess.run(
-                    [*command[:2], "linux_dot_panel.clipboard.watch_event"],
+                    [*command[:2], "win_dot_panel.clipboard.watch_event"],
                     input=b"password",
                     env=dict(env, CLIPBOARD_STATE="sensitive"),
                     capture_output=True,
@@ -77,8 +77,8 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path):
             result = cli(action)
             assert result.returncode == 0, (action, result.stderr)
         assert daemon.wait(timeout=3) == 0
-        assert (tmp_path / "data" / "linux-dot-panel" / "panel.db").is_file()
-        with sqlite3.connect(tmp_path / "data" / "linux-dot-panel" / "panel.db") as connection:
+        assert (tmp_path / "data" / "win-dot-panel" / "panel.db").is_file()
+        with sqlite3.connect(tmp_path / "data" / "win-dot-panel" / "panel.db") as connection:
             assert connection.execute(
                 "SELECT text_content, use_count FROM clipboard_items"
             ).fetchall() == [("copied from browser", 2)]

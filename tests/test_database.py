@@ -4,18 +4,18 @@ import sqlite3
 
 import pytest
 
-from linux_dot_panel.emoji.models import EmojiRecord
-from linux_dot_panel.storage.database import database_path, open_database
-from linux_dot_panel.storage.migrations import UnsupportedSchemaError
-from linux_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
-from linux_dot_panel.storage.repositories.emoji_repository import EmojiRepository
-from linux_dot_panel.storage.repositories.settings_repository import SettingsRepository
+from win_dot_panel.emoji.models import EmojiRecord
+from win_dot_panel.storage.database import database_path, open_database
+from win_dot_panel.storage.migrations import UnsupportedSchemaError
+from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRepository
+from win_dot_panel.storage.repositories.emoji_repository import EmojiRepository
+from win_dot_panel.storage.repositories.settings_repository import SettingsRepository
 
 
 def test_database_uses_xdg_path_and_survives_reopen(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     path = database_path()
-    assert path == tmp_path / "linux-dot-panel" / "panel.db"
+    assert path == tmp_path / "win-dot-panel" / "panel.db"
 
     connection = open_database()
     SettingsRepository(connection).set("theme", "dark")

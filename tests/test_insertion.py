@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from linux_dot_panel.insertion import TextInserter
+from win_dot_panel.insertion import TextInserter
 
 
 class FakeText:
