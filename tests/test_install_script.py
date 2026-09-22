@@ -34,7 +34,7 @@ case " $* " in
         done ;;
 esac
 """,
-        "dpkg-query": "#!/bin/sh\nprintf 'Installed win-dot-panel 1.0.0-1\\n'\n",
+        "dpkg-query": "#!/bin/sh\nprintf '1.0.0-1'\n",
     }
     for name, content in scripts.items():
         path = fake_bin / name
@@ -63,7 +63,9 @@ esac
             "https://packages.elixpo.com/apt/ ./\n"
         )
         assert "apt-get install -y win-dot-panel" in log.read_text()
-        assert "Installed win-dot-panel 1.0.0-1" in result.stdout
+        assert "Win Dot Panel 1.0.0-1 installed" in result.stdout
+        assert "your clipboard, one shortcut away" in result.stdout
+        assert "log out and log back in once" in result.stdout
     else:
         assert "fingerprint did not match" in result.stderr
         assert "apt-get install -y win-dot-panel" not in log.read_text()

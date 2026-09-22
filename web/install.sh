@@ -7,6 +7,16 @@ expected_fingerprint="1D7CBFA8E3D9599C7CA03B86EEEA89F4C2DB5DE5"
 keyring_path="/etc/apt/keyrings/win-dot-panel.gpg"
 source_path="/etc/apt/sources.list.d/win-dot-panel.list"
 
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    green=$'\033[1;32m'
+    soft_green=$'\033[0;32m'
+    reset=$'\033[0m'
+else
+    green=""
+    soft_green=""
+    reset=""
+fi
+
 if ! command -v apt-get >/dev/null 2>&1; then
     printf 'Win Dot Panel APT installation requires Debian or Ubuntu.\n' >&2
     exit 1
@@ -47,4 +57,8 @@ printf 'deb [signed-by=%s] %s ./\n' "$keyring_path" "$repository_url" |
 
 "${privileged[@]}" apt-get update
 "${privileged[@]}" apt-get install -y win-dot-panel
-dpkg-query -W -f='Installed win-dot-panel ${Version}\n' win-dot-panel
+version=$(dpkg-query -W -f='${Version}' win-dot-panel)
+printf '%s✓ Win Dot Panel %s installed — your clipboard, one shortcut away.%s\n' \
+    "$green" "$version" "$reset"
+printf '%sIf clipboard history stays empty, log out and log back in once to activate it.%s\n' \
+    "$soft_green" "$reset"

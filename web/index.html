@@ -47,9 +47,12 @@
     }
   </script>
   <style>
-    :root { color-scheme: dark; --bg:#101219; --panel:#1b1e29; --line:#323645; --text:#f5f5f8; --muted:#b4b7c5; --accent:#9bb9ff; --warm:#f1cba7; }
+    :root { color-scheme: dark; --bg:#101219; --panel:#1b1e29; --line:#323645; --text:#f5f5f8; --muted:#b4b7c5; --accent:#9bb9ff; --warm:#f1cba7; --success:#79dca6; --success-bg:#102b20; --success-line:#2f7551; }
     * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
+    html { scroll-behavior:smooth; scrollbar-color:var(--success) #151823; scrollbar-width:thin; }
+    *::-webkit-scrollbar { width:10px; height:10px; }
+    *::-webkit-scrollbar-track { background:#151823; }
+    *::-webkit-scrollbar-thumb { border:2px solid #151823; border-radius:999px; background:var(--success); }
     body { margin:0; color:var(--text); background:radial-gradient(circle at 78% 12%,#26304d 0,transparent 30%),radial-gradient(circle at 15% 38%,#292038 0,transparent 30%),var(--bg); font:16px/1.55 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     a { color:inherit; text-decoration:none; }
     a:hover { color:#d4e0ff; }
@@ -108,6 +111,9 @@
     .status.ready::before { background:#8bd7ae; }
     .code-box { position:relative; overflow:auto; border:1px solid #ffffff19; border-radius:12px; background:#11141d; }
     pre { margin:0; padding:20px 18px 54px; color:#d6e1fd; font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .install-result { margin-top:16px; padding:16px 17px; overflow:auto; border:1px solid var(--success-line); border-radius:12px; background:var(--success-bg); color:var(--success); font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .install-result strong { display:block; margin-bottom:4px; color:#a6f2c6; font-size:14px; }
+    .install-result span { display:block; min-width:360px; }
     .copy { position:absolute; right:9px; bottom:9px; padding:5px 10px; border:1px solid #4e5569; border-radius:7px; background:#242938; color:#e8ebf4; font-size:12px; cursor:pointer; }
     .copy:hover { background:#353c50; }
     .small-link { display:inline-block; margin-top:17px; color:#bbd0ff; font-size:13px; }
@@ -168,14 +174,14 @@
             <h3>APT repository</h3><p>Add the signed repository once. After that, normal APT updates include Win Dot Panel.</p>
             <div class="status" id="apt-status" role="status">Checking repository availability…</div>
             <div class="code-box"><pre id="apt-command">curl -fsSL -o /var/tmp/win-dot-panel-install.sh https://packages.elixpo.com/install.sh &amp;&amp; bash /var/tmp/win-dot-panel-install.sh</pre><button class="copy" data-copy="apt-command" aria-label="Copy APT install command">Copy</button></div>
+            <div class="install-result" role="note" aria-label="Successful installation message"><strong>✓ Installed — your clipboard, one shortcut away.</strong><span>If clipboard history stays empty, log out and log back in once to activate it.</span></div>
             <a class="small-link" href="https://github.com/Circuit-Overtime/linux-clipboard/blob/main/docs/apt-repository.md#manual-setup">Prefer the manual APT steps? ↗</a>
             <div class="code-box" style="margin-top:12px"><pre id="update-command">sudo apt update &amp;&amp; sudo apt install --only-upgrade win-dot-panel</pre><button class="copy" data-copy="update-command" aria-label="Copy update command">Copy</button></div>
           </div>
           <div class="install-card">
             <h3>GitHub release</h3><p>Download the latest stable <code>.deb</code> file from GitHub and open it with your package installer, or use APT on the downloaded file.</p>
             <a class="button secondary" href="https://github.com/Circuit-Overtime/linux-clipboard/releases/latest">Open latest release ↗</a>
-            <p style="margin-top:25px">To keep clipboard history running after sign-in:</p>
-            <div class="code-box"><pre id="startup-command">/usr/bin/win-dot-panel install</pre><button class="copy" data-copy="startup-command" aria-label="Copy startup command">Copy</button></div>
+            <div class="install-result" role="note" aria-label="Clipboard activation note"><strong>✓ Clipboard history starts automatically.</strong><span>If it stays empty after installing the package, log out and log back in once to activate it.</span></div>
             <a class="small-link" href="https://github.com/Circuit-Overtime/linux-clipboard/blob/main/docs/shortcuts.md">Shortcut setup guide ↗</a>
           </div>
         </div>
