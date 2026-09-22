@@ -36,5 +36,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     depends = subprocess.check_output(["dpkg-deb", "--field", str(package), "Depends"], text=True)
     assert "./usr/bin/linux-dot-panel" in contents
     assert "./usr/lib/python3/dist-packages/linux_dot_panel/resources/emoji.json" in contents
+    assert "drwxr-xr-x root/root" in contents
+    assert "-rwxr-xr-x root/root" in contents
     assert "wl-clipboard" in depends
     assert "python3-pyside6.qtwidgets" in depends

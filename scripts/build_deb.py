@@ -78,6 +78,13 @@ def _write_control(stage: Path, version: str) -> None:
     )
 
 
+def _set_package_modes(stage: Path) -> None:
+    stage.chmod(0o755)
+    for path in stage.rglob("*"):
+        path.chmod(0o755 if path.is_dir() else 0o644)
+    (stage / "usr/bin" / PACKAGE).chmod(0o755)
+
+
 def build_deb(wheel_path: Path, output_dir: Path) -> Path:
     with ZipFile(wheel_path) as wheel:
         version = _wheel_version(wheel)
@@ -94,8 +101,8 @@ def build_deb(wheel_path: Path, output_dir: Path) -> Path:
                 "raise SystemExit(main())\n",
                 encoding="utf-8",
             )
-            launcher.chmod(0o755)
             _write_control(stage, version)
+            _set_package_modes(stage)
             subprocess.run(
                 ["dpkg-deb", "--build", "--root-owner-group", str(stage), str(destination)],
                 check=True,
