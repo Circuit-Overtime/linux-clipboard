@@ -87,6 +87,8 @@ jobs:
         run: cd dist && sha256sum -c SHA256SUMS
       - name: Prepare product page
         run: mkdir -p site && cp -R web/. site/
+      - name: Check crawler files
+        run: python3 scripts/check_site.py site
       - name: Check APT signing configuration
         id: signing
         env:
