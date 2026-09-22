@@ -57,3 +57,43 @@ jobs:
             --title "Main build #${GITHUB_RUN_NUMBER}" \
             --notes "Development build from main commit ${GITHUB_SHA}." \
             --repo "$GITHUB_REPOSITORY"
+
+  apt_repository:
+    name: Publish signed APT repository
+    if: github.ref_type == 'tag'
+    needs: [package, publish]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: validated-debian-package
+          path: dist
+      - name: Verify downloaded package
+        run: cd dist && sha256sum -c SHA256SUMS
+      - name: Install repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev gnupg
+      - name: Build signed repository
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          test -n "$APT_SIGNING_KEY"
+          export GNUPGHOME="$RUNNER_TEMP/win-dot-panel-gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+          printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
+          bash scripts/build_apt_repo.sh dist/win-dot-panel_*.deb site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

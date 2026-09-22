@@ -6,6 +6,7 @@ import argparse
 import subprocess
 import sys
 import time
+from urllib.error import URLError
 
 from win_dot_panel.ipc.client import send_command
 
@@ -78,6 +79,8 @@ def main(argv: list[str] | None = None) -> int:
         "--method", choices=("xdg", "systemd"), default="xdg", help="Session startup method"
     )
     commands.add_parser("uninstall", help="Remove session autostart")
+    update_command = commands.add_parser("update", help="Update the installed Debian package")
+    update_command.add_argument("--channel", choices=("stable", "main"), default="stable")
     commands.add_parser("toggle-clipboard", help="Open Clipboard or close it if already open")
     for command in ("toggle", "show", "hide", "status", "quit"):
         commands.add_parser(command, help=f"Send {command} to the daemon")
@@ -103,6 +106,23 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, ValueError) as error:
             print(error, file=sys.stderr)
             return 1
+        return 0
+    if args.command == "update":
+        from win_dot_panel.updater import update
+
+        try:
+            tag = update(args.channel)
+        except (
+            OSError,
+            TypeError,
+            ValueError,
+            UnicodeError,
+            URLError,
+            subprocess.CalledProcessError,
+        ) as error:
+            print(f"Update failed: {error}", file=sys.stderr)
+            return 1
+        print(f"Installed {tag}. The next shortcut press will start the updated app.")
         return 0
     if args.command in ("toggle", "toggle-clipboard", "show", "hide", "status", "quit"):
         return _run_command(args.command)

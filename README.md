@@ -33,9 +33,37 @@ To open it with **Super + .**, add `win-dot-panel toggle` as a custom keyboard s
 
 The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
 
-## Updates and removal
+## Update
 
-Download and install a newer package from [Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases) when one is available. To stop starting at login, run `win-dot-panel uninstall`. To remove the app, run `sudo apt remove win-dot-panel`. Removing it does not erase your saved clipboard history.
+After a new stable release is published, run:
+
+```bash
+/usr/bin/win-dot-panel update
+```
+
+The updater downloads the package from GitHub, checks its SHA-256 checksum, asks APT to install it, and restarts the app on your next shortcut press. To try the newest development build instead, run `/usr/bin/win-dot-panel update --channel main`.
+
+The current `0.1.0-3` package does not yet have the updater. For this first update, or whenever you prefer to install a GitHub release yourself, use these commands. They select the newest published release, including development builds, and require the GitHub CLI (`gh`):
+
+```bash
+tag=$(gh release list -R Circuit-Overtime/linux-clipboard \
+  --limit 1 --json tagName --jq '.[0].tagName')
+gh release download "$tag" -R Circuit-Overtime/linux-clipboard \
+  -p 'win-dot-panel_*_all.deb' -O /var/tmp/win-dot-panel.deb --clobber
+chmod 644 /var/tmp/win-dot-panel.deb
+sudo apt install --allow-downgrades /var/tmp/win-dot-panel.deb
+/usr/bin/win-dot-panel quit
+```
+
+The last command stops any older background process. If it says the daemon is not running, the install is still complete.
+
+APT cannot discover new packages from a GitHub Releases page by itself. Other apps make `sudo apt update && sudo apt upgrade` work by publishing a signed APT repository. This project does not yet have one.
+
+We are preparing a [signed APT repository](docs/apt-repository.md) on GitHub Pages. Once it has its first stable package, users will be able to add it once and receive later stable updates through APT.
+
+## Remove
+
+To stop starting at login, run `win-dot-panel uninstall`. To remove the app, run `sudo apt remove win-dot-panel`. Removing it does not erase your saved clipboard history.
 
 Developing or packaging the app? See the [developer guide](docs/development.md) and [implementation plan](docs/implementation-plan.md).
 

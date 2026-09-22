@@ -38,6 +38,8 @@ The [release workflow](../.github/workflows/release-deb.yml) builds a Debian pac
 
 Package-related pushes to `main` also publish numbered prereleases. Their Debian version includes `~main.<run number>`, so regular releases remain newer for APT. Documentation-only pushes do not publish a package.
 
+Stable tags also publish a [signed APT repository](apt-repository.md) after Pages and the signing key are configured. The repository index contains the validated stable package; main prereleases remain GitHub release assets.
+
 The package can be installed from GitHub Releases without an APT repository. Copy the `.deb` to `/var/tmp` with mode `644` before `sudo apt install` so APT's `_apt` user can read it. An APT repository would be needed for automatic package-manager updates.
 
 The offline emoji data is generated from [Unicode Emoji 18.0](https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt) and [Unicode CLDR English annotations](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-annotations-full/annotations/en/annotations.json). It is distributed under the [Unicode License v3](../src/win_dot_panel/resources/UNICODE-LICENSE.txt).
