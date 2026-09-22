@@ -170,13 +170,27 @@ class EmojiPage(QWidget):
         self.grid.selected.connect(self.select_index)
         layout.addWidget(self.grid, 1)
 
-        self.empty = QLabel("No emoji found")
+        self.empty_container = QWidget()
+        empty_layout = QVBoxLayout(self.empty_container)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.setSpacing(8)
+        empty_icon = QLabel("☺")
+        empty_icon.setObjectName("emptyIcon")
+        empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.addWidget(empty_icon)
+        empty_title = QLabel("Find the right emoji")
+        empty_title.setObjectName("emptyTitle")
+        empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.addWidget(empty_title)
+        self.empty = QLabel("Search or browse your favorite expressions.")
         self.empty.setObjectName("emptyCaption")
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.empty)
+        empty_layout.addWidget(self.empty)
+        layout.addWidget(self.empty_container)
 
         self.more = QPushButton("Load more")
         self.more.setObjectName("loadMore")
+        self.more.setAccessibleDescription("Load more emoji for this category")
         self.more.clicked.connect(self.load_more)
         layout.addWidget(self.more)
         self.refresh()
@@ -208,7 +222,10 @@ class EmojiPage(QWidget):
         else:
             records = self.repository.list_category(category, limit=PAGE_SIZE)
         self.model.replace(records)
-        self.empty.setVisible(not records)
+        self.empty.setText(
+            "No matches" if self.query else "Search or browse your favorite expressions."
+        )
+        self.empty_container.setVisible(not records)
         self.grid.setVisible(bool(records))
         self.more.setVisible(
             bool(records) and len(records) == PAGE_SIZE and not self.query and category != "Recent"

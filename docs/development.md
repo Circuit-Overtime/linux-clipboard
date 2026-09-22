@@ -20,6 +20,8 @@ Useful commands are `win-dot-panel toggle`, `win-dot-panel status`, `win-dot-pan
 
 The database is stored at `$XDG_DATA_HOME/win-dot-panel/panel.db`, or `~/.local/share/win-dot-panel/panel.db`. Settings are stored under `$XDG_CONFIG_HOME/win-dot-panel`, or `~/.config/win-dot-panel`. The schema is versioned and the app does not replace an unsupported existing database. Data from builds before the package rename is not moved automatically.
 
+The `config.json` file supports the following fields: `theme` (system/light/dark), `history_limit` (integer), `clipboard_enabled` (boolean), `close_after_selection` (boolean), and `remember_last_tab` (boolean). Missing fields fall back to defaults. Restart the daemon after changing settings manually.
+
 ## Check and build
 
 ```bash

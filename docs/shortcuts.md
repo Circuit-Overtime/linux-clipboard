@@ -24,8 +24,11 @@ Add ` toggle` to the printed path. For example, enter `/home/you/linux-clipboard
 
 1. Open **Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts**.
 2. Add a shortcut named **Emoji & Clipboard Panel**.
-3. Enter the command chosen above.
+3. Enter the command chosen above (`win-dot-panel toggle` or its absolute path).
 4. Record **Super + .** and save. If another custom shortcut already uses it, edit or remove that binding first.
+5. Create a second shortcut named **Clipboard History**.
+6. Enter the command `win-dot-panel toggle-clipboard` (or its absolute path).
+7. Record **Super + V** and save.
 
 GNOME's [custom shortcut instructions](https://help.gnome.org/gnome-help/keyboard-shortcuts-set.html) describe the name, command, and key recording fields.
 
@@ -33,8 +36,11 @@ GNOME's [custom shortcut instructions](https://help.gnome.org/gnome-help/keyboar
 
 1. Open **System Settings → Shortcuts** (under **Keyboard** on some versions).
 2. In Plasma 6, choose **Add New → Command or Script**. In older Plasma releases, look for **Custom Shortcuts**.
-3. Enter the command chosen above and assign **Meta + .**. KDE calls the Windows/Super key **Meta**.
+3. Enter the command chosen above (`win-dot-panel toggle`) and assign **Meta + .**. KDE calls the Windows/Super key **Meta**.
 4. Apply the change. If the combination is already assigned, choose another free combination.
+5. Add a second custom command shortcut.
+6. Enter the command `win-dot-panel toggle-clipboard` and assign **Meta + V**.
+7. Apply the change.
 
 See the [KDE Shortcuts module](https://docs.kde.org/stable_kf6/en/plasma-desktop/kcontrol/keys/) and the [Plasma 6 command shortcut example](https://discuss.kde.org/t/personalized-keyboard-shortcuts-gone-after-update-to-plasma-6-how-to-put-them-back/13126/4).
 
@@ -69,3 +75,8 @@ gsettings reset org.freedesktop.ibus.panel.emoji hotkey
 ```
 
 IBus defines both combinations in its [emoji shortcut schema](https://github.com/ibus/ibus/blob/main/data/dconf/org.freedesktop.ibus.gschema.xml).
+
+## Verification Status
+
+> **Note**: This project was primarily developed on Windows.
+> The GNOME and KDE shortcut configuration steps are documented from official sources but have not been comprehensively live-tested in this environment.

@@ -121,23 +121,55 @@ def run_daemon() -> int:
                 stored = capture.capture_image(data, mime_type) if image else capture.capture(text)
                 return {"ok": True, "stored": stored}
 
+            def _setup_backend(b) -> None:
+                b.clipboard_changed.connect(
+                    lambda text, sensitive: capture.capture(text, sensitive=sensitive)
+                )
+                b.image_changed.connect(
+                    lambda data, mime_type, sensitive: capture.capture_image(
+                        data, mime_type, sensitive=sensitive
+                    )
+                )
+
+            def _start_x11_backend() -> X11ClipboardBackend | None:
+                try:
+                    backend = X11ClipboardBackend()
+                    _setup_backend(backend)
+                    if backend.start():
+                        LOGGER.info("Using X11 clipboard backend")
+                        return backend
+                    LOGGER.warning("X11 clipboard backend failed to start")
+                except Exception:
+                    LOGGER.warning("X11 clipboard backend unavailable", exc_info=True)
+                return None
+
             server = IpcServer(handle, handle_clipboard_event)
             server.start()
             app.aboutToQuit.connect(server.stop)
-            if os.environ.get("XDG_SESSION_TYPE") == "wayland" or app.platformName() == "wayland":
-                backend = WaylandClipboardBackend()
+
+            backend = None
+            if not settings.clipboard_enabled:
+                LOGGER.info("Clipboard history disabled by settings")
+            elif os.environ.get("XDG_SESSION_TYPE") == "wayland" or app.platformName() == "wayland":
+                try:
+                    wayland_backend = WaylandClipboardBackend()
+                    _setup_backend(wayland_backend)
+                    if wayland_backend.start():
+                        backend = wayland_backend
+                        LOGGER.info("Using Wayland clipboard backend")
+                except Exception:
+                    LOGGER.warning("Wayland clipboard backend unavailable", exc_info=True)
+                if backend is None:
+                    backend = _start_x11_backend()
             else:
-                backend = X11ClipboardBackend()
-            backend.clipboard_changed.connect(
-                lambda text, sensitive: capture.capture(text, sensitive=sensitive)
-            )
-            backend.image_changed.connect(
-                lambda data, mime_type, sensitive: capture.capture_image(
-                    data, mime_type, sensitive=sensitive
+                backend = _start_x11_backend()
+
+            if backend is None and settings.clipboard_enabled:
+                LOGGER.warning(
+                    "No clipboard backend available; clipboard history will not populate"
                 )
-            )
-            backend.start()
-            app.aboutToQuit.connect(backend.stop)
+            if backend is not None:
+                app.aboutToQuit.connect(backend.stop)
             LOGGER.info("Daemon started")
             return app.exec()
         finally:
