@@ -67,6 +67,7 @@ jobs:
           test -x extracted/usr/bin/win-dot-panel
           test -f extracted/usr/lib/python3/dist-packages/win_dot_panel/resources/emoji.json
           test -f extracted/usr/lib/python3/dist-packages/win_dot_panel/storage/schema.sql
+          test -f extracted/usr/share/doc/win-dot-panel/copyright
           PYTHONPATH="$PWD/extracted/usr/lib/python3/dist-packages" extracted/usr/bin/win-dot-panel --help
           (cd dist && sha256sum win-dot-panel_*.deb > SHA256SUMS && sha256sum -c SHA256SUMS)
       - uses: actions/upload-artifact@v7

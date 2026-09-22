@@ -41,3 +41,5 @@ Package-related pushes to `main` also publish numbered prereleases. Their Debian
 The package can be installed from GitHub Releases without an APT repository. Copy the `.deb` to `/var/tmp` with mode `644` before `sudo apt install` so APT's `_apt` user can read it. An APT repository would be needed for automatic package-manager updates.
 
 The offline emoji data is generated from [Unicode Emoji 18.0](https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt) and [Unicode CLDR English annotations](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-annotations-full/annotations/en/annotations.json). It is distributed under the [Unicode License v3](../src/win_dot_panel/resources/UNICODE-LICENSE.txt).
+
+The application code is MIT licensed; bundled emoji data retains the Unicode License v3. The wheel records both notices in its license metadata, and the Debian package installs them under `/usr/share/doc/win-dot-panel/copyright`. PySide6 remains a separately licensed dependency supplied by pip or the system package manager.

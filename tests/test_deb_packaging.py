@@ -21,7 +21,12 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
             "win_dot_panel/resources/UNICODE-LICENSE.txt",
             "win_dot_panel/storage/schema.sql",
         ):
-            archive.writestr(name, "")
+            archive.writestr(
+                name,
+                "UNICODE LICENSE V3\nCopyright Unicode, Inc.\n"
+                if name.endswith("UNICODE-LICENSE.txt")
+                else "",
+            )
         archive.writestr(
             "win_dot_panel-0.1.0.dist-info/METADATA",
             "Metadata-Version: 2.1\nName: win-dot-panel\nVersion: 0.1.0\n",
@@ -56,7 +61,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     subprocess.run(["dpkg-deb", "--extract", str(package), str(unpacked)], check=True)
     copyright_text = (unpacked / "usr/share/doc/win-dot-panel/copyright").read_text()
     assert "MIT License" in copyright_text
-    assert "Unicode License v3" in copyright_text
+    assert "UNICODE LICENSE V3\nCopyright Unicode, Inc." in copyright_text
 
     subprocess.run(
         [
