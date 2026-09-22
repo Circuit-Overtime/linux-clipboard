@@ -54,23 +54,24 @@ def stylesheet(dark: bool) -> str:
         border-radius: 20px;
     }
     QFrame#dragGrip { background: $border; border: none; border-radius: 2px; }
-    QFrame#shortcutTip {
+    QFrame#sourceCard {
         background: $field;
         border: 1px solid $border;
-        border-radius: 11px;
+        border-radius: 16px;
     }
-    QLabel#shortcutTipText { color: $text; font-size: 12px; }
-    QPushButton#shortcutHelp, QPushButton#shortcutDismiss {
-        color: $accent;
-        background: transparent;
-        border: 1px solid transparent;
-        border-radius: 7px;
-        padding: 4px 5px;
-        font-size: 12px;
+    QLabel#sourceTitle { color: $text; font-size: 20px; font-weight: 600; }
+    QLabel#sourceDescription { color: $muted; font-size: 13px; }
+    QPushButton#sourceAction {
+        color: $text;
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-size: 13px;
+        text-align: left;
     }
-    QPushButton#shortcutHelp:hover, QPushButton#shortcutDismiss:hover { background: $selected; }
-    QPushButton#shortcutHelp:focus, QPushButton#shortcutDismiss:focus { border-color: $accent; }
-    QPushButton#shortcutDismiss { color: $muted; font-size: 17px; }
+    QPushButton#sourceAction:hover { border-color: $accent; }
+    QPushButton#sourceAction:focus { border-color: $accent; background: $selected; }
     QLabel#subtitle, QLabel#hint, QLabel#emptyCaption { color: $muted; }
     QLabel#emptyTitle { color: $text; font-size: 18px; font-weight: 600; }
     QLabel#emptyIcon { color: $accent; font-size: 38px; }
@@ -93,8 +94,8 @@ def stylesheet(dark: bool) -> str:
         background: transparent;
         border: 1px solid transparent;
         border-radius: 9px;
-        padding: 9px 11px;
-        font-size: 13px;
+        padding: 9px 5px;
+        font-size: 12px;
         font-weight: 550;
     }
     QPushButton[tabButton="true"]:hover { color: $text; }

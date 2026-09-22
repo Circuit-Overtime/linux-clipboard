@@ -72,7 +72,18 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     desktop = (unpacked / "usr/share/applications/win-dot-panel.desktop").read_text()
     assert "Exec=/usr/bin/win-dot-panel toggle\n" in desktop
     assert "Icon=win-dot-panel\n" in desktop
-    assert (unpacked / "usr/share/icons/hicolor/512x512/apps/win-dot-panel.png").read_bytes() == icon
+    assert (
+        unpacked / "usr/share/icons/hicolor/512x512/apps/win-dot-panel.png"
+    ).read_bytes() == icon
+
+    control = tmp_path / "control"
+    subprocess.run(["dpkg-deb", "--control", str(package), str(control)], check=True)
+    postinst = control / "postinst"
+    assert postinst.stat().st_mode & 0o111
+    message = subprocess.check_output([str(postinst), "configure"], text=True)
+    assert "Super + .  ->  /usr/bin/win-dot-panel toggle" in message
+    assert "Super + V  ->  /usr/bin/win-dot-panel toggle-clipboard" in message
+    assert "https://packages.elixpo.com/#shortcuts" in message
 
     subprocess.run(
         [

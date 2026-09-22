@@ -120,11 +120,34 @@ def _write_desktop_integration(stage: Path, wheel: ZipFile) -> None:
     icon.write_bytes(wheel.read(f"{MODULE}/resources/icon.png"))
 
 
+def _write_postinst(stage: Path) -> None:
+    postinst = stage / "DEBIAN" / "postinst"
+    postinst.write_text(
+        "#!/bin/sh\n"
+        "set -e\n"
+        'if [ "$1" = configure ]; then\n'
+        "    cat <<'HELP'\n"
+        "\n"
+        "Win Dot Panel is installed. Set these desktop keyboard shortcuts:\n"
+        "  Super + .  ->  /usr/bin/win-dot-panel toggle\n"
+        "  Super + V  ->  /usr/bin/win-dot-panel toggle-clipboard\n"
+        "\n"
+        "Open Win Dot Panel from your app menu, or run /usr/bin/win-dot-panel toggle.\n"
+        "Shortcut help: https://packages.elixpo.com/#shortcuts\n"
+        "\n"
+        "HELP\n"
+        "fi\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+
+
 def _set_package_modes(stage: Path) -> None:
     stage.chmod(0o755)
     for path in stage.rglob("*"):
         path.chmod(0o755 if path.is_dir() else 0o644)
     (stage / "usr/bin" / PACKAGE).chmod(0o755)
+    (stage / "DEBIAN" / "postinst").chmod(0o755)
 
 
 def build_deb(
@@ -154,6 +177,7 @@ def build_deb(
             _write_control(stage, version, revision)
             _write_copyright(stage, wheel)
             _write_desktop_integration(stage, wheel)
+            _write_postinst(stage)
             _set_package_modes(stage)
             subprocess.run(
                 ["dpkg-deb", "--build", "--root-owner-group", str(stage), str(destination)],

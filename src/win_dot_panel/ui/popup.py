@@ -14,13 +14,11 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     QTimer,
-    QUrl,
     Signal,
 )
 from PySide6.QtGui import (
     QColor,
     QCursor,
-    QDesktopServices,
     QKeyEvent,
     QKeySequence,
     QMouseEvent,
@@ -47,11 +45,11 @@ from win_dot_panel.storage.repositories.clipboard_repository import ClipboardRep
 from win_dot_panel.storage.repositories.emoji_repository import EmojiRepository
 from win_dot_panel.ui.pages.clipboard_page import ClipboardPage
 from win_dot_panel.ui.pages.emoji_page import EmojiPage
+from win_dot_panel.ui.pages.open_source_page import OpenSourcePage
 from win_dot_panel.ui.pages.text_picker_page import TextPickerPage
 from win_dot_panel.ui.theme import is_dark, stylesheet
 
 LOGGER = logging.getLogger(__name__)
-SHORTCUT_HELP_URL = QUrl("https://packages.elixpo.com/#shortcuts")
 
 
 PAGE_TEXT = {
@@ -165,6 +163,7 @@ class PopupPanel(QWidget):
         )
         self.kaomoji_page = TextPickerPage("Kaomoji", dark=self._dark)
         self.symbols_page = TextPickerPage("Symbols", dark=self._dark)
+        self.source_page = OpenSourcePage()
         for name in TABS:
             if name == "Emoji" and self.emoji_page is not None:
                 page = self.emoji_page
@@ -174,36 +173,12 @@ class PopupPanel(QWidget):
                 page = self.kaomoji_page
             elif name == "Symbols":
                 page = self.symbols_page
+            elif name == "Open Source":
+                page = self.source_page
             else:
                 page = self._empty_page(name)
             self.pages.addWidget(page)
         content.addWidget(self.pages, 1)
-
-        self.shortcut_tip = QFrame()
-        self.shortcut_tip.setObjectName("shortcutTip")
-        self.shortcut_tip.setAccessibleName("Shortcut setup tip")
-        tip_layout = QHBoxLayout(self.shortcut_tip)
-        tip_layout.setContentsMargins(12, 8, 10, 8)
-        tip_layout.setSpacing(8)
-        tip_text = QLabel("Set Super + . for emoji and Super + V for clipboard")
-        tip_text.setObjectName("shortcutTipText")
-        tip_text.setWordWrap(True)
-        tip_layout.addWidget(tip_text, 1)
-        help_button = QPushButton("Help ↗")
-        help_button.setObjectName("shortcutHelp")
-        help_button.setAccessibleName("Open shortcut setup help")
-        help_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        help_button.clicked.connect(lambda: QDesktopServices.openUrl(SHORTCUT_HELP_URL))
-        tip_layout.addWidget(help_button)
-        dismiss_button = QPushButton("×")
-        dismiss_button.setObjectName("shortcutDismiss")
-        dismiss_button.setAccessibleName("Dismiss shortcut setup tip")
-        dismiss_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        dismiss_button.clicked.connect(self._dismiss_shortcut_tip)
-        tip_layout.addWidget(dismiss_button)
-        content.addWidget(self.shortcut_tip)
-        if settings.shortcut_tip_dismissed:
-            self.shortcut_tip.hide()
 
         self.search.textChanged.connect(self._search_changed)
         self.search.returnPressed.connect(self._select_search_result)
@@ -252,14 +227,6 @@ class PopupPanel(QWidget):
         self.kaomoji_page.set_dark(dark)
         self.symbols_page.set_dark(dark)
 
-    def _dismiss_shortcut_tip(self) -> None:
-        self.shortcut_tip.hide()
-        self.settings.shortcut_tip_dismissed = True
-        try:
-            self.settings.save()
-        except OSError as error:
-            LOGGER.warning("Could not save settings: %s", error)
-
     def _empty_page(self, name: str) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -282,6 +249,7 @@ class PopupPanel(QWidget):
         name = TABS[index]
         self.search.setPlaceholderText(f"Search {name.lower()}…")
         self.search.clear()
+        self.search.setVisible(name != "Open Source")
         if name == "Clipboard" and self.clipboard_page is not None:
             self.clipboard_page.refresh()
         for tab_index, button in enumerate(self.tab_buttons):
@@ -294,7 +262,13 @@ class PopupPanel(QWidget):
                 self.settings.save()
             except OSError as error:
                 LOGGER.warning("Could not save settings: %s", error)
-        self.search.setFocus()
+        self._focus_current_page()
+
+    def _focus_current_page(self) -> None:
+        if self.pages.currentIndex() == TABS.index("Open Source"):
+            self.source_page.star_button.setFocus()
+        else:
+            self.search.setFocus()
 
     def show_panel(self) -> None:
         if not self.isVisible():
@@ -313,7 +287,7 @@ class PopupPanel(QWidget):
         self.show()
         self.raise_()
         self.activateWindow()
-        QTimer.singleShot(0, self.search.setFocus)
+        QTimer.singleShot(0, self._focus_current_page)
 
     def hide_panel(self) -> None:
         if self.isVisible():

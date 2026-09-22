@@ -31,6 +31,8 @@ sudo apt install win-dot-panel
 
 The same steps are on [packages.elixpo.com](https://packages.elixpo.com/). If you prefer a standalone package, get the latest stable `.deb` from [GitHub Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest). For other Linux distributions, see the [developer guide](docs/development.md).
 
+After installation, APT prints the suggested shortcut commands and a link to the setup guide. You can also open Win Dot Panel from your app menu before setting the shortcuts.
+
 ## Open the panel
 
 Run `win-dot-panel toggle` to show or hide it. To start the app automatically when you sign in, run `win-dot-panel install` once.
@@ -38,6 +40,8 @@ Run `win-dot-panel toggle` to show or hide it. To start the app automatically wh
 To open it with **Super + .**, add `/usr/bin/win-dot-panel toggle` as a custom keyboard shortcut in your desktop settings. Assign **Super + V** to `/usr/bin/win-dot-panel toggle-clipboard` to open the Clipboard tab directly. Follow the [GNOME or KDE shortcut guide](docs/shortcuts.md) if you need help. Run `/usr/bin/win-dot-panel install` once to record copies while the panel is closed; the shortcut also starts the app if it is not already running.
 
 The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an emoji or symbol to insert it. On the Clipboard tab, select an entry and choose **Copy** to use it again. Press **Esc** to close the panel.
+
+The **Open Source** tab links to the repository, issues, and documentation.
 
 ## Update
 
