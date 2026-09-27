@@ -52,6 +52,8 @@ class FakeNode:
         self.editable = editable
         self.role = role
         self.children = children
+        self.text = FakeText()
+        self.editable_iface = FakeEditable()
 
     def get_state_set(self) -> FakeStates:
         return FakeStates(self.focused)
@@ -61,6 +63,12 @@ class FakeNode:
 
     def get_role(self) -> str:
         return self.role
+
+    def get_text_iface(self) -> FakeText | None:
+        return self.text if self.editable else None
+
+    def get_editable_text_iface(self) -> FakeEditable | None:
+        return self.editable_iface if self.editable else None
 
     def get_child_count(self) -> int:
         return len(self.children)
@@ -73,6 +81,7 @@ def test_insertion_uses_caret_and_preserves_target_for_repeated_emoji():
     inserter = TextInserter()
     target = FakeTarget()
     inserter.target = target
+    inserter.caret_offset = target.text.offset
 
     assert inserter.insert("🚀")
     assert inserter.insert("🙂")
@@ -98,3 +107,28 @@ def test_capture_skips_password_fields():
 
     inserter.capture_focused_field()
     assert inserter.target is text
+    assert inserter.caret_offset == 3
+
+
+def test_insertion_uses_captured_caret_after_target_loses_focus():
+    target = FakeNode(focused=True, editable=True)
+    root = FakeNode(children=(target,))
+    inserter = TextInserter()
+    inserter.atspi = type(
+        "FakeAtspi",
+        (),
+        {
+            "StateType": type("StateType", (), {"FOCUSED": "focused"}),
+            "Role": type("Role", (), {"PASSWORD_TEXT": "password"}),
+            "get_desktop_count": staticmethod(lambda: 1),
+            "get_desktop": staticmethod(lambda index: root),
+        },
+    )
+
+    inserter.capture_focused_field()
+    target.focused = False
+    target.text.offset = -1
+
+    assert inserter.insert("🚀")
+    assert target.editable_iface.calls == [(3, "🚀", 4)]
+    assert inserter.caret_offset == 4

@@ -10,6 +10,7 @@ LOGGER = logging.getLogger(__name__)
 class TextInserter:
     def __init__(self) -> None:
         self.target = None
+        self.caret_offset: int | None = None
         try:
             import gi
 
@@ -21,15 +22,24 @@ class TextInserter:
             self.atspi = Atspi
 
     def capture_focused_field(self) -> None:
-        """Remember the editable field before the panel takes keyboard focus."""
+        """Remember the editable field and caret before the panel takes focus."""
         self.target = None
+        self.caret_offset = None
         if self.atspi is None:
             return
         try:
             remaining = [2000]
             for index in range(self.atspi.get_desktop_count()):
-                self.target = self._find_focused_editable(self.atspi.get_desktop(index), remaining)
-                if self.target is not None:
+                target = self._find_focused_editable(self.atspi.get_desktop(index), remaining)
+                if target is None:
+                    continue
+                text = target.get_text_iface()
+                if text is None:
+                    continue
+                offset = text.get_caret_offset()
+                if offset >= 0:
+                    self.target = target
+                    self.caret_offset = offset
                     return
         except Exception:
             LOGGER.debug("Could not inspect the focused text field", exc_info=True)
@@ -57,19 +67,18 @@ class TextInserter:
         return None
 
     def insert(self, value: str) -> bool:
-        if self.target is None:
+        if self.target is None or self.caret_offset is None:
             return False
         try:
             text = self.target.get_text_iface()
             editable = self.target.get_editable_text_iface()
             if text is None or editable is None:
                 return False
-            offset = text.get_caret_offset()
-            if offset < 0:
-                return False
+            offset = self.caret_offset
             if not editable.insert_text(offset, value, len(value.encode("utf-8"))):
                 return False
-            text.set_caret_offset(offset + len(value))
+            self.caret_offset = offset + len(value)
+            text.set_caret_offset(self.caret_offset)
             return True
         except Exception:
             LOGGER.debug("Could not insert into the focused text field", exc_info=True)
