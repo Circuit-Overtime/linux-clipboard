@@ -120,16 +120,30 @@ class PopupPanel(QWidget):
         content.setSpacing(16)
 
         self.drag_handle = QFrame()
-        self.drag_handle.setFixedHeight(14)
+        self.drag_handle.setFixedHeight(26)
         self.drag_handle.setAccessibleName("Drag panel")
         self.drag_handle.setCursor(Qt.CursorShape.OpenHandCursor)
         drag_layout = QHBoxLayout(self.drag_handle)
         drag_layout.setContentsMargins(0, 0, 0, 0)
+        balance = QWidget()
+        balance.setFixedWidth(26)
+        balance.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         grip = QFrame()
         grip.setObjectName("dragGrip")
         grip.setFixedSize(32, 4)
         grip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.close_button = QPushButton("×")
+        self.close_button.setObjectName("closeButton")
+        self.close_button.setFixedSize(26, 26)
+        self.close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.close_button.setAccessibleName("Close panel")
+        self.close_button.setToolTip("Close")
+        self.close_button.clicked.connect(self.hide_panel)
+        drag_layout.addWidget(balance)
+        drag_layout.addStretch()
         drag_layout.addWidget(grip, alignment=Qt.AlignmentFlag.AlignCenter)
+        drag_layout.addStretch()
+        drag_layout.addWidget(self.close_button)
         content.addWidget(self.drag_handle)
 
         self.search = QLineEdit()
@@ -298,14 +312,14 @@ class PopupPanel(QWidget):
             self.hide()
             self.panel_hidden.emit()
 
-    def changeEvent(self, event: QEvent) -> None:
-        if (
-            event.type() == QEvent.Type.WindowDeactivate
-            and self.isVisible()
-            and QApplication.activePopupWidget() is None
-        ):
+    def event(self, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.WindowDeactivate and self.isVisible():
+            QTimer.singleShot(0, self._hide_after_deactivation)
+        return super().event(event)
+
+    def _hide_after_deactivation(self) -> None:
+        if self.isVisible() and QApplication.activePopupWidget() is None:
             self.hide_panel()
-        super().changeEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if watched is self.drag_handle and isinstance(event, QMouseEvent):

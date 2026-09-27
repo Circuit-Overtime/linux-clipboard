@@ -82,13 +82,12 @@ def run_daemon() -> int:
             def handle(command: str) -> dict[str, object]:
                 if command not in COMMANDS:
                     return {"ok": False, "error": f"Unknown command: {command}"}
-                if command == "toggle":
-                    panel.hide_panel() if panel.isVisible() else panel.show_panel()
-                elif command == "toggle-clipboard":
-                    if panel.isVisible() and panel.pages.currentIndex() == TABS.index("Clipboard"):
+                if command in ("toggle", "toggle-clipboard"):
+                    if panel.isVisible():
                         panel.hide_panel()
                     else:
-                        panel.select_tab(TABS.index("Clipboard"))
+                        if command == "toggle-clipboard":
+                            panel.select_tab(TABS.index("Clipboard"))
                         panel.show_panel()
                 elif command == "show":
                     panel.show_panel()

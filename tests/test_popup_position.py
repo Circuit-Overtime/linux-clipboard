@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import QPoint, QRect, QSize, Qt
+from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
@@ -46,4 +46,32 @@ def test_popup_can_be_dragged_by_handle(monkeypatch):
     QTest.mouseRelease(panel.drag_handle, Qt.MouseButton.LeftButton, pos=QPoint(52, 37))
 
     assert panel.pos() == original + QPoint(40, 30)
+    panel.close()
+
+
+def test_popup_closes_when_window_deactivates(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    panel = PopupPanel(Settings())
+    panel.show()
+    app.processEvents()
+
+    panel.event(QEvent(QEvent.Type.WindowDeactivate))
+    app.processEvents()
+
+    assert not panel.isVisible()
+    panel.close()
+
+
+def test_popup_has_explicit_close_button(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    panel = PopupPanel(Settings())
+    panel.show()
+    app.processEvents()
+
+    panel.close_button.click()
+
+    assert panel.close_button.accessibleName() == "Close panel"
+    assert not panel.isVisible()
     panel.close()

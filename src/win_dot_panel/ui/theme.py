@@ -54,6 +54,15 @@ def stylesheet(dark: bool) -> str:
         border-radius: 20px;
     }
     QFrame#dragGrip { background: $border; border: none; border-radius: 2px; }
+    QPushButton#closeButton {
+        color: $muted;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 18px;
+    }
+    QPushButton#closeButton:hover { color: $text; background: $field; }
+    QPushButton#closeButton:focus { color: $text; border-color: $accent; }
     QFrame#sourceCard {
         background: $field;
         border: 1px solid $border;

@@ -58,10 +58,13 @@ def test_cli_reaches_daemon_over_unix_socket(tmp_path, monkeypatch):
             raise AssertionError("Daemon did not create its socket")
 
         assert cli("show").returncode == 0
+        assert send_command("status")["visible"] is True
+        assert cli("toggle-clipboard").returncode == 0
+        assert send_command("status")["visible"] is False
         assert cli("toggle-clipboard").returncode == 0
         assert send_command("status")["tab"] == "Clipboard"
         assert send_command("status")["visible"] is True
-        assert cli("toggle-clipboard").returncode == 0
+        assert cli("toggle").returncode == 0
         assert send_command("status")["visible"] is False
 
         for action in ("show", "hide", "toggle", "quit"):
