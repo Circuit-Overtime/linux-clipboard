@@ -89,49 +89,64 @@ def test_insertion_uses_caret_and_preserves_target_for_repeated_emoji():
     assert target.text.offset == 5
 
 
-def test_capture_skips_password_fields():
+def test_focus_events_skip_password_fields_and_remember_editable_caret():
     password = FakeNode(focused=True, editable=True, role="password")
-    text = FakeNode(focused=True, editable=True)
-    root = FakeNode(children=(password, text))
+    target = FakeNode(focused=True, editable=True)
     inserter = TextInserter()
     inserter.atspi = type(
         "FakeAtspi",
         (),
-        {
-            "StateType": type("StateType", (), {"FOCUSED": "focused"}),
-            "Role": type("Role", (), {"PASSWORD_TEXT": "password"}),
-            "get_desktop_count": staticmethod(lambda: 1),
-            "get_desktop": staticmethod(lambda index: root),
-        },
+        {"Role": type("Role", (), {"PASSWORD_TEXT": "password"})},
     )
 
-    inserter.capture_focused_field()
-    assert inserter.target is text
+    inserter._remember_focused_field(password)
+    assert inserter.target is None
+
+    inserter._remember_focused_field(target)
+    assert inserter.target is target
     assert inserter.caret_offset == 3
 
 
-def test_insertion_uses_captured_caret_after_target_loses_focus():
+def test_insertion_uses_event_caret_after_target_loses_focus():
     target = FakeNode(focused=True, editable=True)
-    root = FakeNode(children=(target,))
     inserter = TextInserter()
     inserter.atspi = type(
         "FakeAtspi",
         (),
-        {
-            "StateType": type("StateType", (), {"FOCUSED": "focused"}),
-            "Role": type("Role", (), {"PASSWORD_TEXT": "password"}),
-            "get_desktop_count": staticmethod(lambda: 1),
-            "get_desktop": staticmethod(lambda index: root),
-        },
+        {"Role": type("Role", (), {"PASSWORD_TEXT": "password"})},
     )
 
-    inserter.capture_focused_field()
+    inserter._remember_focused_field(target)
     target.focused = False
     target.text.offset = -1
 
     assert inserter.insert("🚀")
     assert target.editable_iface.calls == [(3, "🚀", 4)]
     assert inserter.caret_offset == 4
+
+
+def test_focus_tracking_freezes_while_panel_is_open(monkeypatch):
+    first = FakeNode(focused=True, editable=True)
+    second = FakeNode(focused=True, editable=True)
+    inserter = TextInserter()
+    inserter.atspi = type(
+        "FakeAtspi",
+        (),
+        {"Role": type("Role", (), {"PASSWORD_TEXT": "password"})},
+    )
+    monkeypatch.setattr(inserter, "_capture_active_window", lambda: "4242")
+    event = lambda source: type("Event", (), {"detail1": 1, "source": source})()
+
+    inserter._focused_changed(event(first))
+    inserter.capture_focused_field()
+    inserter._focused_changed(event(second))
+
+    assert inserter.target is first
+    assert inserter.target_window == "4242"
+
+    inserter.resume_focus_tracking()
+    inserter._focused_changed(event(second))
+    assert inserter.target is second
 
 
 def test_capture_remembers_active_x_window(monkeypatch):

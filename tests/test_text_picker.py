@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QMimeData, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QListView
 
@@ -121,17 +121,25 @@ def test_text_insertion_falls_back_to_previous_x_window(monkeypatch):
 
     class FakeClipboard:
         def __init__(self):
-            self.value = "previous selection"
+            self.mime = QMimeData()
+            self.mime.setText("previous clipboard")
+            self.blocked = False
 
-        @staticmethod
-        def supportsSelection():
-            return True
+        def mimeData(self):
+            return self.mime
 
-        def text(self, mode):
-            return self.value
+        def setMimeData(self, mime, mode):
+            self.mime = mime
 
         def setText(self, value, mode):
-            self.value = value
+            self.mime = QMimeData()
+            self.mime.setText(value)
+
+        def signalsBlocked(self):
+            return self.blocked
+
+        def blockSignals(self, blocked):
+            self.blocked = blocked
 
     clipboard = FakeClipboard()
     commands: list[list[str]] = []
@@ -146,11 +154,13 @@ def test_text_insertion_falls_back_to_previous_x_window(monkeypatch):
     )
 
     assert panel._insert_text("🚀")
-    assert clipboard.value == "🚀"
+    assert clipboard.mime.text() == "🚀"
+    assert clipboard.blocked
     generation = panel._paste_generation
-    panel._finish_primary_paste(generation)
+    panel._finish_clipboard_paste(generation)
 
-    assert clipboard.value == "previous selection"
+    assert clipboard.mime.text() == "previous clipboard"
+    assert not clipboard.blocked
     assert commands == [
         ["xdotool", "windowactivate", "--sync", "4242"],
         [

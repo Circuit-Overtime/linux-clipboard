@@ -10,6 +10,7 @@ import subprocess
 from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
+    QMimeData,
     QObject,
     QPoint,
     QPropertyAnimation,
@@ -94,8 +95,8 @@ class PopupPanel(QWidget):
         self._dark = is_dark(settings.theme)
         self._drag_offset: QPoint | None = None
         self._suppress_deactivation = False
-        self._primary_restore_pending = False
-        self._primary_restore_text = ""
+        self._clipboard_restore_data: QMimeData | None = None
+        self._clipboard_signals_blocked = False
         self._paste_generation = 0
         self.setWindowTitle("Win Dot Panel")
         self.setWindowFlags(
@@ -314,6 +315,7 @@ class PopupPanel(QWidget):
 
     def hide_panel(self) -> None:
         if self.isVisible():
+            self.inserter.resume_focus_tracking()
             self.hide()
             self.panel_hidden.emit()
 
@@ -395,7 +397,7 @@ class PopupPanel(QWidget):
             self.symbols_page.select_current_or_first()
 
     def _insert_text(self, value: str) -> bool:
-        inserted = self.inserter.insert(value) or self._insert_with_primary_selection(value)
+        inserted = self.inserter.insert(value) or self._insert_with_clipboard_paste(value)
         if inserted:
             self.hint.setText("Inserted at the previous cursor position")
         else:
@@ -410,15 +412,23 @@ class PopupPanel(QWidget):
     def _system_clipboard() -> QClipboard:
         return QApplication.clipboard()
 
-    def _insert_with_primary_selection(self, value: str) -> bool:
+    @staticmethod
+    def _copy_mime_data(source: QMimeData) -> QMimeData:
+        copy = QMimeData()
+        for mime_type in source.formats():
+            copy.setData(mime_type, source.data(mime_type))
+        return copy
+
+    def _insert_with_clipboard_paste(self, value: str) -> bool:
         window_id = self.inserter.target_window
-        clipboard = self._system_clipboard()
-        if window_id is None or not clipboard.supportsSelection():
+        if window_id is None:
             return False
-        if not self._primary_restore_pending:
-            self._primary_restore_text = clipboard.text(QClipboard.Mode.Selection)
-            self._primary_restore_pending = True
-        clipboard.setText(value, QClipboard.Mode.Selection)
+        clipboard = self._system_clipboard()
+        if self._clipboard_restore_data is None:
+            self._clipboard_restore_data = self._copy_mime_data(clipboard.mimeData())
+            self._clipboard_signals_blocked = clipboard.signalsBlocked()
+            clipboard.blockSignals(True)
+        clipboard.setText(value, QClipboard.Mode.Clipboard)
         self._paste_generation += 1
         generation = self._paste_generation
         self._suppress_deactivation = True
@@ -444,21 +454,22 @@ class PopupPanel(QWidget):
                     check=False,
                 )
                 if result.returncode != 0:
-                    self._finish_primary_paste(generation)
+                    self._finish_clipboard_paste(generation)
                     return False
         except (OSError, subprocess.TimeoutExpired):
-            self._finish_primary_paste(generation)
+            self._finish_clipboard_paste(generation)
             return False
-        QTimer.singleShot(250, lambda: self._finish_primary_paste(generation))
+        QTimer.singleShot(250, lambda: self._finish_clipboard_paste(generation))
         return True
 
-    def _finish_primary_paste(self, generation: int) -> None:
+    def _finish_clipboard_paste(self, generation: int) -> None:
         if generation != self._paste_generation:
             return
         clipboard = self._system_clipboard()
-        if self._primary_restore_pending and clipboard.supportsSelection():
-            clipboard.setText(self._primary_restore_text, QClipboard.Mode.Selection)
-        self._primary_restore_pending = False
+        if self._clipboard_restore_data is not None:
+            clipboard.setMimeData(self._clipboard_restore_data, QClipboard.Mode.Clipboard)
+            self._clipboard_restore_data = None
+        clipboard.blockSignals(self._clipboard_signals_blocked)
         self._suppress_deactivation = False
         if self.isVisible():
             self.raise_()

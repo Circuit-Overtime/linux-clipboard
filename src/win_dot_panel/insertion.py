@@ -1,4 +1,4 @@
-"""Insert text through the desktop accessibility interface when available."""
+"""Insert text through accessibility or a retained desktop window."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ class TextInserter:
         self.target = None
         self.caret_offset: int | None = None
         self.target_window: str | None = None
+        self.tracking_enabled = True
+        self.listener = None
         try:
             import gi
 
@@ -23,30 +25,44 @@ class TextInserter:
             self.atspi = None
         else:
             self.atspi = Atspi
+            try:
+                self.listener = Atspi.EventListener.new(self._focused_changed)
+                self.listener.register("object:state-changed:focused")
+            except Exception:
+                self.listener = None
+                LOGGER.debug("Could not register the accessibility focus listener", exc_info=True)
 
     def capture_focused_field(self) -> None:
-        """Remember the editable field and caret before the panel takes focus."""
+        """Freeze the last focus event and retain the active window before showing."""
+        self.target_window = self._capture_active_window()
+        self.tracking_enabled = False
+
+    def resume_focus_tracking(self) -> None:
+        self.tracking_enabled = True
+
+    def _focused_changed(self, event: object, *_user_data: object) -> None:
+        if not self.tracking_enabled or not getattr(event, "detail1", 0):
+            return
+        self._remember_focused_field(getattr(event, "source", None))
+
+    def _remember_focused_field(self, node: object | None) -> None:
         self.target = None
         self.caret_offset = None
-        self.target_window = self._capture_active_window()
-        if self.atspi is None:
+        if node is None or self.atspi is None:
             return
         try:
-            remaining = [2000]
-            for index in range(self.atspi.get_desktop_count()):
-                target = self._find_focused_editable(self.atspi.get_desktop(index), remaining)
-                if target is None:
-                    continue
-                text = target.get_text_iface()
-                if text is None:
-                    continue
-                offset = text.get_caret_offset()
-                if offset >= 0:
-                    self.target = target
-                    self.caret_offset = offset
-                    return
+            if not node.is_editable_text() or node.get_role() == self.atspi.Role.PASSWORD_TEXT:
+                return
+            text = node.get_text_iface()
+            editable = node.get_editable_text_iface()
+            if text is None or editable is None:
+                return
+            offset = text.get_caret_offset()
+            if offset >= 0:
+                self.target = node
+                self.caret_offset = offset
         except Exception:
-            LOGGER.debug("Could not inspect the focused text field", exc_info=True)
+            LOGGER.debug("Could not retain the focused text field", exc_info=True)
 
     @staticmethod
     def _capture_active_window() -> str | None:
@@ -64,28 +80,6 @@ class TextInserter:
             return None
         window_id = result.stdout.strip()
         return window_id if result.returncode == 0 and window_id.isdigit() else None
-
-    def _find_focused_editable(self, node: object, remaining: list[int]) -> object | None:
-        if remaining[0] <= 0:
-            return None
-        remaining[0] -= 1
-        try:
-            if (
-                node.get_state_set().contains(self.atspi.StateType.FOCUSED)
-                and node.is_editable_text()
-                and node.get_role() != self.atspi.Role.PASSWORD_TEXT
-            ):
-                return node
-            count = min(node.get_child_count(), 200)
-            for index in range(count):
-                child = node.get_child_at_index(index)
-                if child is not None:
-                    found = self._find_focused_editable(child, remaining)
-                    if found is not None:
-                        return found
-        except Exception:
-            LOGGER.debug("Could not inspect an accessible widget", exc_info=True)
-        return None
 
     def insert(self, value: str) -> bool:
         if self.target is None or self.caret_offset is None:
