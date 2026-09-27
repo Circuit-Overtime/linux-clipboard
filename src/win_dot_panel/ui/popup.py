@@ -20,6 +20,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import (
+    QClipboard,
     QColor,
     QCursor,
     QKeyEvent,
@@ -92,6 +93,10 @@ class PopupPanel(QWidget):
         self.inserter = TextInserter()
         self._dark = is_dark(settings.theme)
         self._drag_offset: QPoint | None = None
+        self._suppress_deactivation = False
+        self._primary_restore_pending = False
+        self._primary_restore_text = ""
+        self._paste_generation = 0
         self.setWindowTitle("Win Dot Panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -318,7 +323,11 @@ class PopupPanel(QWidget):
         return super().event(event)
 
     def _hide_after_deactivation(self) -> None:
-        if self.isVisible() and QApplication.activePopupWidget() is None:
+        if (
+            not self._suppress_deactivation
+            and self.isVisible()
+            and QApplication.activePopupWidget() is None
+        ):
             self.hide_panel()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -386,7 +395,7 @@ class PopupPanel(QWidget):
             self.symbols_page.select_current_or_first()
 
     def _insert_text(self, value: str) -> bool:
-        inserted = self.inserter.insert(value)
+        inserted = self.inserter.insert(value) or self._insert_with_primary_selection(value)
         if inserted:
             self.hint.setText("Inserted at the previous cursor position")
         else:
@@ -396,6 +405,65 @@ class PopupPanel(QWidget):
         self.hint_animation.setEndValue(1.0)
         self.hint_animation.start()
         return inserted
+
+    @staticmethod
+    def _system_clipboard() -> QClipboard:
+        return QApplication.clipboard()
+
+    def _insert_with_primary_selection(self, value: str) -> bool:
+        window_id = self.inserter.target_window
+        clipboard = self._system_clipboard()
+        if window_id is None or not clipboard.supportsSelection():
+            return False
+        if not self._primary_restore_pending:
+            self._primary_restore_text = clipboard.text(QClipboard.Mode.Selection)
+            self._primary_restore_pending = True
+        clipboard.setText(value, QClipboard.Mode.Selection)
+        self._paste_generation += 1
+        generation = self._paste_generation
+        self._suppress_deactivation = True
+        commands = (
+            ["xdotool", "windowactivate", "--sync", window_id],
+            [
+                "xdotool",
+                "key",
+                "--window",
+                window_id,
+                "--clearmodifiers",
+                "shift+Insert",
+            ],
+        )
+        try:
+            for command in commands:
+                result = subprocess.run(
+                    command,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1,
+                    check=False,
+                )
+                if result.returncode != 0:
+                    self._finish_primary_paste(generation)
+                    return False
+        except (OSError, subprocess.TimeoutExpired):
+            self._finish_primary_paste(generation)
+            return False
+        QTimer.singleShot(250, lambda: self._finish_primary_paste(generation))
+        return True
+
+    def _finish_primary_paste(self, generation: int) -> None:
+        if generation != self._paste_generation:
+            return
+        clipboard = self._system_clipboard()
+        if self._primary_restore_pending and clipboard.supportsSelection():
+            clipboard.setText(self._primary_restore_text, QClipboard.Mode.Selection)
+        self._primary_restore_pending = False
+        self._suppress_deactivation = False
+        if self.isVisible():
+            self.raise_()
+            self.activateWindow()
+            QTimer.singleShot(0, self._focus_current_page)
 
     def _insert_clipboard_item(self, item: ClipboardItem) -> None:
         if item.content_type == "text":

@@ -132,3 +132,17 @@ def test_insertion_uses_captured_caret_after_target_loses_focus():
     assert inserter.insert("🚀")
     assert target.editable_iface.calls == [(3, "🚀", 4)]
     assert inserter.caret_offset == 4
+
+
+def test_capture_remembers_active_x_window(monkeypatch):
+    monkeypatch.setattr("win_dot_panel.insertion.shutil.which", lambda name: "/usr/bin/xdotool")
+    monkeypatch.setattr(
+        "win_dot_panel.insertion.subprocess.run",
+        lambda *args, **kwargs: type("Result", (), {"returncode": 0, "stdout": "4242\n"})(),
+    )
+    inserter = TextInserter()
+    inserter.atspi = None
+
+    inserter.capture_focused_field()
+
+    assert inserter.target_window == "4242"

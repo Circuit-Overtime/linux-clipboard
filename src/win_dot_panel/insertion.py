@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import shutil
+import subprocess
 
 LOGGER = logging.getLogger(__name__)
 
@@ -11,6 +13,7 @@ class TextInserter:
     def __init__(self) -> None:
         self.target = None
         self.caret_offset: int | None = None
+        self.target_window: str | None = None
         try:
             import gi
 
@@ -25,6 +28,7 @@ class TextInserter:
         """Remember the editable field and caret before the panel takes focus."""
         self.target = None
         self.caret_offset = None
+        self.target_window = self._capture_active_window()
         if self.atspi is None:
             return
         try:
@@ -43,6 +47,23 @@ class TextInserter:
                     return
         except Exception:
             LOGGER.debug("Could not inspect the focused text field", exc_info=True)
+
+    @staticmethod
+    def _capture_active_window() -> str | None:
+        if shutil.which("xdotool") is None:
+            return None
+        try:
+            result = subprocess.run(
+                ["xdotool", "getactivewindow"],
+                capture_output=True,
+                text=True,
+                timeout=1,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        window_id = result.stdout.strip()
+        return window_id if result.returncode == 0 and window_id.isdigit() else None
 
     def _find_focused_editable(self, node: object, remaining: list[int]) -> object | None:
         if remaining[0] <= 0:

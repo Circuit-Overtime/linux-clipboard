@@ -112,3 +112,54 @@ def test_symbols_search_category_and_insertion_failure(monkeypatch):
     panel.search.setText("e acute")
     assert "é" in [item.value for item in panel.symbols_page.model.records]
     panel.close()
+
+
+def test_text_insertion_falls_back_to_previous_x_window(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    QApplication.instance() or QApplication([])
+    panel = PopupPanel(Settings())
+
+    class FakeClipboard:
+        def __init__(self):
+            self.value = "previous selection"
+
+        @staticmethod
+        def supportsSelection():
+            return True
+
+        def text(self, mode):
+            return self.value
+
+        def setText(self, value, mode):
+            self.value = value
+
+    clipboard = FakeClipboard()
+    commands: list[list[str]] = []
+    monkeypatch.setattr(panel.inserter, "insert", lambda value: False)
+    panel.inserter.target_window = "4242"
+    monkeypatch.setattr(panel, "_system_clipboard", lambda: clipboard)
+    monkeypatch.setattr(
+        "win_dot_panel.ui.popup.subprocess.run",
+        lambda command, **kwargs: (
+            commands.append(command) or type("Result", (), {"returncode": 0})()
+        ),
+    )
+
+    assert panel._insert_text("🚀")
+    assert clipboard.value == "🚀"
+    generation = panel._paste_generation
+    panel._finish_primary_paste(generation)
+
+    assert clipboard.value == "previous selection"
+    assert commands == [
+        ["xdotool", "windowactivate", "--sync", "4242"],
+        [
+            "xdotool",
+            "key",
+            "--window",
+            "4242",
+            "--clearmodifiers",
+            "shift+Insert",
+        ],
+    ]
+    panel.close()
