@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtWidgets import QApplication
 
 from win_dot_panel.config import Settings
@@ -68,8 +68,12 @@ def test_wayland_text_uses_portal_clipboard_and_restores_it(monkeypatch):
     assert not panel.isVisible()
     assert panel._paste_snapshot is not None
     assert panel._paste_snapshot.isVisible()
+    assert panel._paste_snapshot.windowFlags() & Qt.WindowType.WindowDoesNotAcceptFocus
+    assert panel._paste_snapshot.windowFlags() & Qt.WindowType.WindowTransparentForInput
+    assert panel._paste_snapshot.windowFlags() & Qt.WindowType.X11BypassWindowManagerHint
 
-    callbacks.pop(0)()
+    while portal.shortcuts == 0:
+        callbacks.pop(0)()
     assert portal.shortcuts == 1
     callbacks.pop(0)()
 

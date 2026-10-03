@@ -11,6 +11,7 @@ from typing import Protocol
 from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
+    QEventLoop,
     QMimeData,
     QObject,
     QPoint,
@@ -543,15 +544,18 @@ class PopupPanel(QWidget):
         snapshot.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         snapshot.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         snapshot.setWindowFlags(
-            Qt.WindowType.Tool
+            Qt.WindowType.ToolTip
             | Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.WindowDoesNotAcceptFocus
             | Qt.WindowType.WindowTransparentForInput
+            | Qt.WindowType.X11BypassWindowManagerHint
         )
         snapshot.setPixmap(self.grab())
         snapshot.setGeometry(self.geometry())
         snapshot.show()
+        snapshot.raise_()
+        QApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
         self._paste_snapshot = snapshot
 
     def _hide_paste_snapshot(self) -> None:
