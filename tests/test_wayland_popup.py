@@ -66,6 +66,8 @@ def test_wayland_text_uses_portal_clipboard_and_restores_it(monkeypatch):
     assert panel._insert_text("🚀")
     assert portal.selections == [("🚀".encode(), "text/plain;charset=utf-8")]
     assert not panel.isVisible()
+    assert panel._paste_snapshot is not None
+    assert panel._paste_snapshot.isVisible()
 
     callbacks.pop(0)()
     assert portal.shortcuts == 1
@@ -73,6 +75,7 @@ def test_wayland_text_uses_portal_clipboard_and_restores_it(monkeypatch):
 
     assert portal.restores == 1
     assert panel.isVisible()
+    assert panel._paste_snapshot is None
     panel.close()
 
 
@@ -88,6 +91,7 @@ def test_wayland_clipboard_activation_keeps_panel_closed(monkeypatch):
     assert panel._insert_with_portal_clipboard(
         b"clipboard text", "text/plain;charset=utf-8", keep_open=False
     )
+    assert panel._paste_snapshot is None
     callbacks.pop(0)()
     callbacks.pop(0)()
 

@@ -118,6 +118,7 @@ class PopupPanel(QWidget):
         self._paste_generation = 0
         self._reopen_after_paste = False
         self._portal_paste_active = False
+        self._paste_snapshot: QLabel | None = None
         self.setWindowTitle("Win Dot Panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -529,9 +530,37 @@ class PopupPanel(QWidget):
         self._portal_paste_active = True
         self._suppress_deactivation = True
         self._reopen_after_paste = keep_open
+        if keep_open:
+            self._show_paste_snapshot()
         self.hide()
         QTimer.singleShot(120, lambda: self._send_portal_paste(generation))
         return True
+
+    def _show_paste_snapshot(self) -> None:
+        """Keep the panel visually stable while its real window releases focus."""
+        self._hide_paste_snapshot()
+        snapshot = QLabel()
+        snapshot.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        snapshot.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        snapshot.setWindowFlags(
+            Qt.WindowType.Tool
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.WindowDoesNotAcceptFocus
+            | Qt.WindowType.WindowTransparentForInput
+        )
+        snapshot.setPixmap(self.grab())
+        snapshot.setGeometry(self.geometry())
+        snapshot.show()
+        self._paste_snapshot = snapshot
+
+    def _hide_paste_snapshot(self) -> None:
+        snapshot = self._paste_snapshot
+        if snapshot is None:
+            return
+        self._paste_snapshot = None
+        snapshot.hide()
+        snapshot.deleteLater()
 
     def _send_portal_paste(self, generation: int) -> None:
         if generation != self._paste_generation:
@@ -560,8 +589,10 @@ class PopupPanel(QWidget):
             self.show()
             self.raise_()
             self.activateWindow()
+            self._hide_paste_snapshot()
             QTimer.singleShot(0, self._focus_current_page)
         elif not self.isVisible():
+            self._hide_paste_snapshot()
             self.inserter.resume_focus_tracking()
             self.panel_hidden.emit()
         self._reopen_after_paste = False
