@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import subprocess
+from typing import Protocol
 
 from PySide6.QtCore import (
     QEasingCurve,
@@ -58,6 +59,21 @@ from win_dot_panel.ui.theme import is_dark, stylesheet
 LOGGER = logging.getLogger(__name__)
 
 
+class InputController(Protocol):
+    ready: bool
+    state: str
+    ready_changed: Signal
+    authorization_failed: Signal
+
+    def authorize(self) -> None: ...
+
+    def set_clipboard_data(self, data: bytes, mime_type: str) -> bool: ...
+
+    def restore_clipboard(self) -> None: ...
+
+    def send_paste_shortcut(self) -> bool: ...
+
+
 PAGE_TEXT = {
     "Emoji": ("☺", "Find the right emoji", "Search or browse your favorite expressions."),
     "Clipboard": ("▤", "Your clipboard, close at hand", "Recent copied text will appear here."),
@@ -88,9 +104,11 @@ class PopupPanel(QWidget):
         settings: Settings,
         emoji_repository: EmojiRepository | None = None,
         clipboard_repository: ClipboardRepository | None = None,
+        input_controller: InputController | None = None,
     ) -> None:
         super().__init__()
         self.settings = settings
+        self.input_controller = input_controller
         self.inserter = TextInserter()
         self._dark = is_dark(settings.theme)
         self._drag_offset: QPoint | None = None
@@ -98,6 +116,8 @@ class PopupPanel(QWidget):
         self._clipboard_restore_data: QMimeData | None = None
         self._clipboard_signals_blocked = False
         self._paste_generation = 0
+        self._reopen_after_paste = False
+        self._portal_paste_active = False
         self.setWindowTitle("Win Dot Panel")
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -237,6 +257,17 @@ class PopupPanel(QWidget):
         self.select_tab(TABS.index(settings.last_tab), persist=False)
         if settings.theme == "system":
             QApplication.instance().paletteChanged.connect(self._refresh_theme)
+        if self.input_controller is not None:
+            self.input_controller.ready_changed.connect(self._portal_ready_changed)
+            self.input_controller.authorization_failed.connect(self._portal_failed)
+
+    def _portal_ready_changed(self, ready: bool) -> None:
+        if ready and self.isVisible():
+            self.hint.setText("Keyboard and clipboard access enabled")
+
+    def _portal_failed(self, message: str) -> None:
+        if self.isVisible():
+            self.hint.setText(f"{message} — reopen the panel to try again")
 
     def _refresh_theme(self, _palette: QPalette) -> None:
         dark = is_dark(self.settings.theme)
@@ -296,14 +327,23 @@ class PopupPanel(QWidget):
 
     def show_panel(self) -> None:
         if not self.isVisible():
-            self.inserter.capture_focused_field()
+            if self.input_controller is None:
+                self.inserter.capture_focused_field()
+            else:
+                # Portal input is delivered to whichever app regains focus after hide.
+                # Avoid a blocking xdotool lookup that cannot identify native Wayland windows.
+                self.inserter.tracking_enabled = False
             cursor = QCursor.pos()
             screen = QApplication.screenAt(cursor) or QApplication.primaryScreen()
             if screen is not None:
                 self.move(position_near_cursor(cursor, self.size(), screen.availableGeometry()))
         self.hint_animation.stop()
         self.hint.graphicsEffect().setOpacity(1.0)
-        self.hint.setText("Ctrl+Tab  Switch tab     Esc  Close")
+        if self.input_controller is not None and not self.input_controller.ready:
+            self.input_controller.authorize()
+            self.hint.setText("Approve keyboard and clipboard access for Wayland insertion")
+        else:
+            self.hint.setText("Ctrl+Tab  Switch tab     Esc  Close")
         if self.emoji_page is not None and self.pages.currentIndex() == 0:
             self.emoji_page.refresh()
         if self.clipboard_page is not None and self.pages.currentIndex() == 1:
@@ -396,10 +436,15 @@ class PopupPanel(QWidget):
         elif self.pages.currentIndex() == 3:
             self.symbols_page.select_current_or_first()
 
-    def _insert_text(self, value: str) -> bool:
-        inserted = self.inserter.insert(value) or self._insert_with_clipboard_paste(value)
+    def _insert_text(self, value: str, *, keep_open: bool = True) -> bool:
+        inserted = self.inserter.insert(value) or self._insert_with_clipboard_paste(
+            value, keep_open=keep_open
+        )
         if inserted:
             self.hint.setText("Inserted at the previous cursor position")
+        elif self.input_controller is not None and not self.input_controller.ready:
+            self.input_controller.authorize()
+            self.hint.setText("Approve keyboard control, then select the item again")
         else:
             self.hint.setText("Could not insert here — focus an editable text field and reopen")
         self.hint_animation.stop()
@@ -419,10 +464,20 @@ class PopupPanel(QWidget):
             copy.setData(mime_type, source.data(mime_type))
         return copy
 
-    def _insert_with_clipboard_paste(self, value: str) -> bool:
+    def _insert_with_clipboard_paste(self, value: str, *, keep_open: bool) -> bool:
         window_id = self.inserter.target_window
-        if window_id is None:
+        portal = self.input_controller
+        if portal is None and window_id is None:
             return False
+        if portal is not None and not portal.ready:
+            portal.authorize()
+            return False
+        if portal is not None:
+            return self._insert_with_portal_clipboard(
+                value.encode("utf-8"),
+                "text/plain;charset=utf-8",
+                keep_open=keep_open,
+            )
         clipboard = self._system_clipboard()
         if self._clipboard_restore_data is None:
             self._clipboard_restore_data = self._copy_mime_data(clipboard.mimeData())
@@ -432,6 +487,7 @@ class PopupPanel(QWidget):
         self._paste_generation += 1
         generation = self._paste_generation
         self._suppress_deactivation = True
+        self._reopen_after_paste = keep_open
         commands = (
             ["xdotool", "windowactivate", "--sync", window_id],
             [
@@ -462,27 +518,76 @@ class PopupPanel(QWidget):
         QTimer.singleShot(250, lambda: self._finish_clipboard_paste(generation))
         return True
 
+    def _insert_with_portal_clipboard(
+        self, data: bytes, mime_type: str, *, keep_open: bool
+    ) -> bool:
+        portal = self.input_controller
+        if portal is None or not portal.set_clipboard_data(data, mime_type):
+            return False
+        self._paste_generation += 1
+        generation = self._paste_generation
+        self._portal_paste_active = True
+        self._suppress_deactivation = True
+        self._reopen_after_paste = keep_open
+        self.hide()
+        QTimer.singleShot(120, lambda: self._send_portal_paste(generation))
+        return True
+
+    def _send_portal_paste(self, generation: int) -> None:
+        if generation != self._paste_generation:
+            return
+        portal = self.input_controller
+        if portal is None or not portal.send_paste_shortcut():
+            self._finish_clipboard_paste(generation)
+            self.hint.setText("Wayland keyboard control is unavailable")
+            return
+        QTimer.singleShot(250, lambda: self._finish_clipboard_paste(generation))
+
     def _finish_clipboard_paste(self, generation: int) -> None:
         if generation != self._paste_generation:
             return
-        clipboard = self._system_clipboard()
-        if self._clipboard_restore_data is not None:
-            clipboard.setMimeData(self._clipboard_restore_data, QClipboard.Mode.Clipboard)
-            self._clipboard_restore_data = None
-        clipboard.blockSignals(self._clipboard_signals_blocked)
+        if self._portal_paste_active and self.input_controller is not None:
+            self.input_controller.restore_clipboard()
+            self._portal_paste_active = False
+        else:
+            clipboard = self._system_clipboard()
+            if self._clipboard_restore_data is not None:
+                clipboard.setMimeData(self._clipboard_restore_data, QClipboard.Mode.Clipboard)
+                self._clipboard_restore_data = None
+            clipboard.blockSignals(self._clipboard_signals_blocked)
         self._suppress_deactivation = False
-        if self.isVisible():
+        if self._reopen_after_paste:
+            self.show()
             self.raise_()
             self.activateWindow()
             QTimer.singleShot(0, self._focus_current_page)
+        elif not self.isVisible():
+            self.inserter.resume_focus_tracking()
+            self.panel_hidden.emit()
+        self._reopen_after_paste = False
 
     def _insert_clipboard_item(self, item: ClipboardItem) -> None:
         if item.content_type == "text":
-            if self._insert_text(item.text_content):
+            if self._insert_text(item.text_content, keep_open=False):
                 self.hide_panel()
             return
         if not item.image_content:
             self.hint.setText("This image is unavailable")
+            return
+        portal = self.input_controller
+        if portal is not None:
+            if not portal.ready:
+                portal.authorize()
+                self.hint.setText("Approve keyboard control, then select the item again")
+                return
+            if self._insert_with_portal_clipboard(
+                item.image_content,
+                "image/png",
+                keep_open=False,
+            ):
+                self.hint.setText("Inserted at the previous cursor position")
+            else:
+                self.hint.setText("Wayland clipboard access is unavailable")
             return
         wayland = os.environ.get("XDG_SESSION_TYPE") == "wayland"
         command = (

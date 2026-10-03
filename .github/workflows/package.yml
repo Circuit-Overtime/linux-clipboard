@@ -66,6 +66,7 @@ jobs:
           dpkg-deb --extract "$package" extracted
           test -x extracted/usr/bin/win-dot-panel
           test -f extracted/usr/lib/python3/dist-packages/win_dot_panel/resources/emoji.json
+          test -f extracted/usr/lib/python3/dist-packages/win_dot_panel/desktop/wayland_portal.py
           test -f extracted/usr/share/applications/win-dot-panel.desktop
           test -f extracted/usr/share/icons/hicolor/512x512/apps/win-dot-panel.png
           dpkg-deb --ctrl-tarfile "$package" | tar -tvf - | grep -q 'postinst$'

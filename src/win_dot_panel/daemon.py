@@ -42,7 +42,6 @@ def run_daemon() -> int:
     from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication
 
-    from win_dot_panel.clipboard.backends.wayland import WaylandClipboardBackend
     from win_dot_panel.clipboard.backends.x11 import X11ClipboardBackend
     from win_dot_panel.ipc.server import IpcServer
     from win_dot_panel.ui.popup import PopupPanel
@@ -76,8 +75,34 @@ def run_daemon() -> int:
             app.setApplicationName("Win Dot Panel")
             app.setQuitOnLastWindowClosed(False)
             clipboard_repository = ClipboardRepository(database)
-            panel = PopupPanel(settings, emoji_repository, clipboard_repository)
             capture = ClipboardCapture(clipboard_repository, history_limit=settings.history_limit)
+            wayland = app.platformName() == "wayland" or (
+                os.environ.get("XDG_SESSION_TYPE") == "wayland"
+                and app.platformName() != "offscreen"
+            )
+            if wayland:
+                from win_dot_panel.desktop.wayland_portal import WaylandPortalBackend
+
+                backend = WaylandPortalBackend(settings.portal_restore_token)
+                input_controller = backend
+
+                def save_portal_token(token: str) -> None:
+                    settings.portal_restore_token = token
+                    try:
+                        settings.save()
+                    except OSError as error:
+                        LOGGER.warning("Could not save Wayland permission: %s", error)
+
+                backend.restore_token_changed.connect(save_portal_token)
+            else:
+                backend = X11ClipboardBackend()
+                input_controller = None
+            panel = PopupPanel(
+                settings,
+                emoji_repository,
+                clipboard_repository,
+                input_controller=input_controller,
+            )
 
             def handle(command: str) -> dict[str, object]:
                 if command not in COMMANDS:
@@ -93,6 +118,13 @@ def run_daemon() -> int:
                     panel.show_panel()
                 elif command == "hide":
                     panel.hide_panel()
+                elif command == "enable-wayland":
+                    if input_controller is None:
+                        return {
+                            "ok": False,
+                            "error": "Wayland permission is not needed in this desktop session",
+                        }
+                    input_controller.authorize()
                 elif command == "quit":
                     QTimer.singleShot(50, app.quit)
                 return {
@@ -123,10 +155,6 @@ def run_daemon() -> int:
             server = IpcServer(handle, handle_clipboard_event)
             server.start()
             app.aboutToQuit.connect(server.stop)
-            if os.environ.get("XDG_SESSION_TYPE") == "wayland" or app.platformName() == "wayland":
-                backend = WaylandClipboardBackend()
-            else:
-                backend = X11ClipboardBackend()
             backend.clipboard_changed.connect(
                 lambda text, sensitive: capture.capture(text, sensitive=sensitive)
             )

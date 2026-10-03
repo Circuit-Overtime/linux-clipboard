@@ -18,6 +18,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
         for name in (
             "win_dot_panel/__init__.py",
             "win_dot_panel/cli.py",
+            "win_dot_panel/desktop/wayland_portal.py",
             "win_dot_panel/resources/emoji.json",
             "win_dot_panel/resources/icon.png",
             "win_dot_panel/resources/UNICODE-LICENSE.txt",
@@ -56,6 +57,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     depends = subprocess.check_output(["dpkg-deb", "--field", str(package), "Depends"], text=True)
     assert "./usr/bin/win-dot-panel" in contents
     assert "./usr/lib/python3/dist-packages/win_dot_panel/resources/emoji.json" in contents
+    assert "./usr/lib/python3/dist-packages/win_dot_panel/desktop/wayland_portal.py" in contents
     assert "./usr/share/doc/win-dot-panel/copyright" in contents
     assert "./usr/share/applications/win-dot-panel.desktop" in contents
     assert "./etc/xdg/autostart/win-dot-panel.desktop" in contents
@@ -64,6 +66,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     assert "-rwxr-xr-x root/root" in contents
     assert "wl-clipboard" in depends
     assert "xdotool" in depends
+    assert "python3-gi" in depends
     assert "python3-pyside6.qtwidgets" in depends
     assert "python3-pyside6.qtnetwork" in depends
     unpacked = tmp_path / "unpacked"
@@ -91,6 +94,8 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     assert "Win Dot Panel installed — your clipboard, one shortcut away" in message
     assert "Log out and log back in once to activate clipboard history" in message
     assert "If clipboard history stays empty, log out and log back in once" in message
+    assert "approve the desktop keyboard and clipboard dialog" in message
+    assert "/usr/bin/win-dot-panel enable-wayland" in message
     postinst_text = postinst.read_text()
     assert "/usr/bin/win-dot-panel quit" in postinst_text
     assert "/usr/bin/win-dot-panel start" in postinst_text

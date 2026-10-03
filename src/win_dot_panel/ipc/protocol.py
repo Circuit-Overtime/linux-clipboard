@@ -8,7 +8,9 @@ import stat
 import tempfile
 from pathlib import Path
 
-COMMANDS = frozenset({"toggle", "toggle-clipboard", "show", "hide", "status", "quit"})
+COMMANDS = frozenset(
+    {"enable-wayland", "toggle", "toggle-clipboard", "show", "hide", "status", "quit"}
+)
 MAX_MESSAGE_BYTES = 4096
 MAX_CLIPBOARD_EVENT_BYTES = 16 * 1024 * 1024 * 4 // 3 + 2048
 

@@ -62,3 +62,5 @@ printf '%s✓ Win Dot Panel %s installed — your clipboard, one shortcut away.%
     "$green" "$version" "$reset"
 printf '%sIf clipboard history stays empty, log out and log back in once to activate it.%s\n' \
     "$soft_green" "$reset"
+printf '%sOn Wayland, open the panel once and approve keyboard and clipboard access.%s\n' \
+    "$soft_green" "$reset"

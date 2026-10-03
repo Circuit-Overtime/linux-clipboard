@@ -174,6 +174,8 @@ def _write_postinst(stage: Path) -> None:
         "\n"
         "Open Win Dot Panel from your app menu, or run /usr/bin/win-dot-panel toggle.\n"
         "Shortcut help: https://packages.elixpo.com/#shortcuts\n"
+        "On Wayland, approve the desktop keyboard and clipboard dialog when the panel first opens.\n"
+        "You can request it again with: /usr/bin/win-dot-panel enable-wayland\n"
         "\n"
         "HELP\n"
         '    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then\n'

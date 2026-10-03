@@ -78,15 +78,13 @@ def _run_command(command: str) -> int:
                 print(error, file=sys.stderr)
                 return 1
         return 0
-    if command in ("toggle", "toggle-clipboard"):
+    if command in ("enable-wayland", "toggle", "toggle-clipboard"):
         try:
             response = send_command(command)
         except OSError:
             try:
                 _start_daemon()
-                response = send_command(
-                    "show" if command == "toggle" else "toggle-clipboard", timeout=3.0
-                )
+                response = send_command(command, timeout=3.0)
             except (OSError, RuntimeError) as error:
                 print(error, file=sys.stderr)
                 return 1
@@ -105,6 +103,8 @@ def _run_command(command: str) -> int:
         return 1
     if command == "status":
         print("running")
+    elif command == "enable-wayland":
+        print("Approve the keyboard and clipboard access dialog to finish setup.")
     return 0
 
 
@@ -128,6 +128,9 @@ def main(argv: list[str] | None = None) -> int:
     update_command = commands.add_parser("update", help="Update the installed Debian package")
     update_command.add_argument("--channel", choices=("stable", "main"), default="stable")
     commands.add_parser("toggle-clipboard", help="Open Clipboard or close it if already open")
+    commands.add_parser(
+        "enable-wayland", help="Request one-time Wayland keyboard and clipboard permission"
+    )
     for command in ("toggle", "show", "hide", "status", "quit"):
         commands.add_parser(command, help=f"Send {command} to the daemon")
     args = parser.parse_args(argv)
@@ -172,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command in (
         "start",
+        "enable-wayland",
         "toggle",
         "toggle-clipboard",
         "show",

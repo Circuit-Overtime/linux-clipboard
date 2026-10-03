@@ -49,3 +49,14 @@ def test_start_launches_daemon_when_stopped(monkeypatch):
 
     assert cli.main(["start"]) == 0
     assert started == [True]
+
+
+def test_enable_wayland_requests_permission(monkeypatch, capsys):
+    commands = []
+    monkeypatch.setattr(
+        cli, "send_command", lambda command, **kwargs: commands.append(command) or {"ok": True}
+    )
+
+    assert cli.main(["enable-wayland"]) == 0
+    assert commands == ["enable-wayland"]
+    assert "Approve the keyboard and clipboard access dialog" in capsys.readouterr().out

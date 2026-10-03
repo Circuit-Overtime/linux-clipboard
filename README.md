@@ -38,6 +38,8 @@ The same quick command is on [packages.elixpo.com](https://packages.elixpo.com/)
 
 The installer prints the shortcut commands and adds an app-menu launcher. `/usr/bin/win-dot-panel toggle` opens the panel.
 
+On Wayland, open the panel once and approve the desktop's keyboard and clipboard access dialog. Win Dot Panel stores the restore token locally so future starts can reuse that approval. If you dismiss the dialog, request it again with `/usr/bin/win-dot-panel enable-wayland`.
+
 ## Open the panel
 
 Run `/usr/bin/win-dot-panel toggle` to show or hide it. Installation through `sudo apt` starts clipboard history immediately for the current desktop user. The package also starts the background app at future sign-ins, so the panel opens quickly and clipboard history stays available. For an older package, run `/usr/bin/win-dot-panel install` once to enable login startup.
@@ -48,7 +50,7 @@ If you previously ran the app from a local `.venv`, change your desktop shortcut
 
 The panel opens near your pointer. Drag the small handle at the top to move it. Use the tabs to browse or search. Click an item to insert it. Clipboard cards have a **⋯** menu with **Copy to clipboard**, **Pin**, and **Remove**. Press **Esc** to close the panel.
 
-Text insertion needs an accessible editable field. The panel shows a message if the app you were using does not expose one. Screenshot insertion uses `xdotool` on X11, which is included with the Debian package, or an available `ydotool` setup on Wayland.
+Text insertion uses the desktop accessibility interface when available. On Wayland, the approved desktop portal supplies clipboard data and sends the paste shortcut to the previously focused app. On X11, the package uses `xdotool` as a fallback.
 
 The **Open Source** tab links to the repository, issues, and documentation.
 
