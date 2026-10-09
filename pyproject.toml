@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "screenbridge"
-version = "0.1.0"
-description = "One-click system audio routing for Ubuntu screen sharing"
+version = "1.0.0"
+description = "Share computer audio on Linux in one click"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

@@ -6,6 +6,7 @@ import argparse
 import sys
 
 from .audio import AudioError, AudioRouter, Device
+from . import __version__
 
 
 def _device_by_default(devices: list[Device], default_name: str) -> int:
@@ -41,84 +42,109 @@ def run_gui() -> int:
 
             self.window = Gtk.ApplicationWindow(application=self)
             self.window.set_title("ScreenBridge")
-            self.window.set_default_size(560, 470)
+            self.window.set_default_size(480, 360)
 
-            root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-            root.set_margin_top(28)
-            root.set_margin_bottom(28)
-            root.set_margin_start(28)
-            root.set_margin_end(28)
+            header = Gtk.HeaderBar()
+            header_title = Gtk.Label(label="ScreenBridge")
+            header_title.add_css_class("title")
+            header.set_title_widget(header_title)
+            about = Gtk.Button(icon_name="help-about-symbolic")
+            about.set_tooltip_text("About ScreenBridge")
+            about.add_css_class("flat")
+            about.connect("clicked", self.show_about)
+            header.pack_end(about)
+            self.window.set_titlebar(header)
+
+            root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+            root.set_margin_top(24)
+            root.set_margin_bottom(24)
+            root.set_margin_start(24)
+            root.set_margin_end(24)
             self.window.set_child(root)
 
-            title = Gtk.Label(label="Share your computer audio")
-            title.add_css_class("title-1")
-            title.set_xalign(0)
-            root.append(title)
+            settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            settings.add_css_class("card")
+            root.append(settings)
 
-            intro = Gtk.Label(
-                label="ScreenBridge creates a virtual audio input while keeping sound playing through your speakers or headphones."
-            )
-            intro.set_wrap(True)
-            intro.set_xalign(0)
-            root.append(intro)
-
-            grid = Gtk.Grid(column_spacing=16, row_spacing=12)
-            root.append(grid)
-            output_label = Gtk.Label(label="Play through")
+            output_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+            output_row.set_margin_top(12)
+            output_row.set_margin_bottom(12)
+            output_row.set_margin_start(14)
+            output_row.set_margin_end(14)
+            output_label = Gtk.Label(label="Listen on")
             output_label.set_xalign(0)
-            grid.attach(output_label, 0, 0, 1, 1)
+            output_label.set_hexpand(True)
+            output_row.append(output_label)
             self.output_dropdown = Gtk.DropDown()
-            self.output_dropdown.set_hexpand(True)
-            grid.attach(self.output_dropdown, 1, 0, 1, 1)
+            self.output_dropdown.set_size_request(240, -1)
+            output_row.append(self.output_dropdown)
+            settings.append(output_row)
+            settings.append(Gtk.Separator())
 
+            mic_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+            mic_row.set_margin_top(12)
+            mic_row.set_margin_bottom(12)
+            mic_row.set_margin_start(14)
+            mic_row.set_margin_end(14)
             mic_label = Gtk.Label(label="Microphone")
             mic_label.set_xalign(0)
-            grid.attach(mic_label, 0, 1, 1, 1)
+            mic_label.set_hexpand(True)
+            mic_row.append(mic_label)
             self.mic_dropdown = Gtk.DropDown()
-            self.mic_dropdown.set_hexpand(True)
-            grid.attach(self.mic_dropdown, 1, 1, 1, 1)
+            self.mic_dropdown.set_size_request(240, -1)
+            mic_row.append(self.mic_dropdown)
+            settings.append(mic_row)
+            settings.append(Gtk.Separator())
 
             mix_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-            mix_text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-            mix_title = Gtk.Label(label="Also create a combined input")
+            mix_row.set_margin_top(14)
+            mix_row.set_margin_bottom(14)
+            mix_row.set_margin_start(14)
+            mix_row.set_margin_end(14)
+            mix_title = Gtk.Label(label="Share microphone too")
             mix_title.set_xalign(0)
-            mix_detail = Gtk.Label(label="Useful for apps that allow only one microphone device")
-            mix_detail.add_css_class("dim-label")
-            mix_detail.set_xalign(0)
-            mix_detail.set_wrap(True)
-            mix_text.append(mix_title)
-            mix_text.append(mix_detail)
-            mix_text.set_hexpand(True)
+            mix_title.set_hexpand(True)
             self.mix_switch = Gtk.Switch()
             self.mix_switch.set_valign(Gtk.Align.CENTER)
-            mix_row.append(mix_text)
+            mix_row.append(mix_title)
             mix_row.append(self.mix_switch)
-            root.append(mix_row)
+            settings.append(mix_row)
 
-            self.status = Gtk.Label()
+            status_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            status_row.set_halign(Gtk.Align.CENTER)
+            self.status_icon = Gtk.Image.new_from_icon_name("media-playback-stop-symbolic")
+            status_row.append(self.status_icon)
+            self.status = Gtk.Label(label="Ready")
             self.status.set_xalign(0)
             self.status.set_wrap(True)
-            root.append(self.status)
+            status_row.append(self.status)
+            root.append(status_row)
 
             self.action = Gtk.Button()
             self.action.add_css_class("suggested-action")
             self.action.add_css_class("pill")
-            self.action.set_size_request(-1, 48)
+            self.action.set_size_request(-1, 46)
             self.action.connect("clicked", self.on_action)
             root.append(self.action)
-
-            hint = Gtk.Label(
-                label="After starting, choose “Screen Share Audio” as an input in your app. Your normal microphone remains available separately."
-            )
-            hint.add_css_class("dim-label")
-            hint.set_wrap(True)
-            hint.set_xalign(0)
-            root.append(hint)
 
             self.refresh()
             self.window.present()
 
+        def show_about(self, _button: Gtk.Button) -> None:
+            dialog = Gtk.AboutDialog(
+                transient_for=self.window,
+                modal=True,
+                program_name="ScreenBridge",
+                version=f"{__version__} Aurora",
+                comments="Share computer audio in one click.",
+                license_type=Gtk.License.MIT_X11,
+                website="https://github.com/elixpo/linux_screen_share",
+                website_label="GitHub",
+            )
+            dialog.present()
+
         def set_error(self, message: str) -> None:
+            self.status_icon.set_from_icon_name("dialog-error-symbolic")
             self.status.set_markup(f'<span foreground="red">{GLib.markup_escape_text(message)}</span>')
 
         def refresh(self) -> None:
@@ -140,11 +166,13 @@ def run_gui() -> int:
                 self.mix_switch.set_sensitive(not active)
                 self.action.set_label("Stop sharing audio" if active else "Start sharing audio")
                 if active:
-                    self.status.set_text("Active — system audio is available as “Screen Share Audio”.")
+                    self.status_icon.set_from_icon_name("audio-volume-high-symbolic")
+                    self.status.set_text("Sharing audio")
                     self.mix_switch.set_active(state.mixed)
                     self.action.remove_css_class("suggested-action")
                     self.action.add_css_class("destructive-action")
                 else:
+                    self.status_icon.set_from_icon_name("emblem-ok-symbolic")
                     self.status.set_text("Ready")
                     self.action.remove_css_class("destructive-action")
                     self.action.add_css_class("suggested-action")
