@@ -28,3 +28,13 @@ git push origin v1.0.0-1
 GitHub Actions runs the tests, builds the Debian package, creates checksums, and publishes both versioned and stable download assets. The stable asset is used by `scripts/install-release.sh`. If `PACKAGES_DEPLOY_TOKEN` is configured, the release also requests a deployment of `packages.elixpo.com`.
 
 The primary installer is published at `https://packages.elixpo.com/screenbridge/install.sh`. `scripts/install-release.sh` remains a GitHub Releases fallback. The package-site source and APT signing key live in `Circuit-Overtime/linux-clipboard`.
+
+## Package-site automation secret
+
+Create a fine-grained GitHub personal access token with:
+
+- Resource owner: `Circuit-Overtime`
+- Repository access: only `linux-clipboard`
+- Repository permission: **Contents — Read and write**
+
+Add it to the `Circuit-Overtime/screenbridge` Actions secrets as `PACKAGES_DEPLOY_TOKEN`. It is used only to send the `package-released` repository-dispatch event. Do not copy `APT_SIGNING_KEY` into this repository.
