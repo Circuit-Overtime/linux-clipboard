@@ -8,7 +8,7 @@ import pytest
 
 from scripts.prepare_site import prepare_site
 
-FINGERPRINT = "1D7CBFA8E3D9599C7CA03B86EEEA89F4C2DB5DE5"
+FINGERPRINT = "319DA9C9E089FAB1264F35F5F8ED950B52AE3CAB"
 
 
 @pytest.mark.parametrize("package", ["win-dot-panel", "screenbridge"])
@@ -79,7 +79,7 @@ esac
             assert "Open ScreenBridge from your applications menu" in result.stdout
     else:
         assert "fingerprint did not match" in result.stderr
-        assert f"apt-get install -y {package}" not in log.read_text()
+        assert not log.exists() or f"apt-get install -y {package}" not in log.read_text()
 
 
 def test_site_preparation_keeps_legacy_installer_route(tmp_path):

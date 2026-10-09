@@ -10,7 +10,9 @@ curl -fsSL -o /var/tmp/win-dot-panel-install.sh \
 bash /var/tmp/win-dot-panel-install.sh
 ```
 
-This checks the repository key fingerprint, registers the signed APT source, and installs the latest stable package. The current signing key fingerprint is `1D7C BFA8 E3D9 599C 7CA0 3B86 EEEA 89F4 C2DB 5DE5`.
+This checks the repository key fingerprint, registers the signed APT source, and installs the latest stable package. The current signing key fingerprint is `319D A9C9 E089 FAB1 264F 35F5 F8ED 950B 52AE 3CAB`.
+
+The signing key was rotated on October 9, 2026 because the previous private key was unavailable. Systems configured before that date must rerun either product installer once to replace the repository key before running `sudo apt update`.
 
 ## Manual setup
 
