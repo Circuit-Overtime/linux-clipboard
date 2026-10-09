@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ScreenBridge
+Comment=Share system audio while screen sharing
+Exec=@EXEC@
+Icon=audio-input-microphone
+Terminal=false
+Categories=AudioVideo;Utility;
+Keywords=screen;share;audio;microphone;pipewire;
+
