@@ -1,53 +1,45 @@
-# ScreenBridge
+# ScreenBridge 1.0 “Aurora”
 
-ScreenBridge makes Ubuntu system audio available as a virtual input without hiding or replacing the real microphone. It works with PipeWire's PulseAudio compatibility server and with PulseAudio itself.
+Share the sound from your Linux computer during calls, presentations, recordings, and streams—with one button.
 
-## What it creates
+ScreenBridge keeps sound playing through your speakers or headphones and leaves your microphone under your control.
 
-- **Screen Share Audio** — computer audio only. Your real microphone remains a separate device.
-- **Screen Share Audio + Microphone** — optional combined input for conferencing apps that accept only one input device.
+## Install
 
-Linux browsers do not currently provide a universal Windows-style “share system audio” track for every screen or window. ScreenBridge handles the Linux audio routing, but the receiving application still decides how many audio inputs it can send:
-
-- In OBS, recording tools, and apps supporting multiple inputs, use **Screen Share Audio** and the real microphone as separate sources.
-- In Google Meet, Discord, and similar one-input apps, enable the combined input and select **Screen Share Audio + Microphone** as the microphone.
-- Chromium can often share audio directly when sharing a browser tab. That is usually preferable for tab-only sharing.
-
-## Requirements
-
-- Ubuntu 22.04 or newer
-- PipeWire or PulseAudio
-- `pactl` (`sudo apt install pulseaudio-utils`)
-- GTK 4 Python bindings (`sudo apt install python3-gi gir1.2-gtk-4.0`)
-
-## Run from the project
+On Ubuntu, open **Terminal**, paste this command, and press Enter:
 
 ```bash
-chmod +x run-screenbridge install.sh screenbridge-launcher
-./run-screenbridge
+curl -fsSL https://raw.githubusercontent.com/elixpo/linux_screen_share/master/scripts/install-release.sh | bash
 ```
 
-Choose where audio should continue playing, choose the microphone, optionally enable the combined input, and press **Start sharing audio**. Then select the new input in the screen-sharing application.
+When it finishes, open **ScreenBridge** from the applications menu.
 
-Stop the session from ScreenBridge when finished. It restores the prior default output and removes the temporary devices.
+## Use
 
-## Install for the current user
+1. Choose your speakers or headphones under **Listen on**.
+2. Choose your microphone.
+3. Press **Start sharing audio**.
+
+In your call or recording app, select **Screen Share Audio** as the audio input.
+
+Turn on **Share microphone too** when an app allows only one audio input. Then choose **Screen Share Audio + Microphone** in that app.
+
+Press **Stop sharing audio** when you are finished. Your usual sound setup is restored automatically.
+
+## Supported systems
+
+ScreenBridge is made for Ubuntu 22.04 and newer. It also works on many Ubuntu-based distributions that use PipeWire or PulseAudio.
+
+## Remove
+
+Open Terminal and run:
 
 ```bash
-chmod +x install.sh screenbridge-launcher
-./install.sh
+sudo apt remove screenbridge
 ```
 
-ScreenBridge then appears in the Ubuntu application menu. The install does not require `sudo`.
+## A small Linux limitation
 
-## Command line
+Some calling apps accept only one audio input. For those apps, use the **Share microphone too** switch. Apps that support multiple inputs can keep computer sound and microphone sound separate.
 
-```bash
-./run-screenbridge list
-./run-screenbridge start --output SINK_NAME --microphone SOURCE_NAME --mix-microphone
-./run-screenbridge status
-./run-screenbridge stop
-```
-
-Session metadata is kept in `~/.local/state/screenbridge/session.json`, allowing the next launch to clean up routes after an application crash.
-
+ScreenBridge is free and open source under the MIT License.
