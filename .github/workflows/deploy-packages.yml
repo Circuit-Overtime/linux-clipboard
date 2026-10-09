@@ -60,10 +60,6 @@ jobs:
           }
 
           clipboard_tag="$(latest_tag 'win-dot-panel/v')"
-          if [[ -z "$clipboard_tag" ]]; then
-            # Supports the first ScreenBridge release during the tag namespace migration.
-            clipboard_tag="$(latest_tag 'v')"
-          fi
           screenbridge_tag="$(latest_tag 'screenbridge/v')"
           test -n "$clipboard_tag" || { echo 'No stable Win Dot Panel release found' >&2; exit 1; }
           test -n "$screenbridge_tag" || { echo 'No stable ScreenBridge release found' >&2; exit 1; }
