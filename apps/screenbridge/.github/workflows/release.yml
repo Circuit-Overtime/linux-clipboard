@@ -1,0 +1,60 @@
+name: Release Debian package
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Run tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Build package
+        run: |
+          version="$(sed -n 's/^__version__ = "\([^"]*\)"/\1/p' screenbridge/__init__.py)"
+          revision="${GITHUB_REF_NAME##*-}"
+          if [[ ! "$revision" =~ ^[1-9][0-9]*$ || "$GITHUB_REF_NAME" != "v${version}-${revision}" ]]; then
+            echo "Tag must match v${version}-<positive Debian revision>" >&2
+            exit 1
+          fi
+          ./packaging/build-deb.sh --revision "$revision"
+
+      - name: Prepare stable download
+        run: |
+          cp dist/screenbridge_*_all.deb dist/screenbridge_all.deb
+          cd dist
+          sha256sum screenbridge_*_all.deb > SHA256SUMS
+          sha256sum screenbridge_all.deb > screenbridge_all.deb.sha256
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          dist/*.deb dist/*.sha256 dist/SHA256SUMS
+          --verify-tag
+          --generate-notes
+          --title "ScreenBridge ${GITHUB_REF_NAME#v}"
+
+      - name: Request packages.elixpo.com deployment
+        env:
+          GH_TOKEN: ${{ secrets.PACKAGES_DEPLOY_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::warning::PACKAGES_DEPLOY_TOKEN is not configured; run the package-site workflow manually."
+            exit 0
+          fi
+          gh api --method POST \
+            repos/Circuit-Overtime/linux-clipboard/dispatches \
+            -f event_type=package-released \
+            -f "client_payload[repository]=$GITHUB_REPOSITORY" \
+            -f "client_payload[tag]=$GITHUB_REF_NAME"
