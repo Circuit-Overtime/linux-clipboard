@@ -93,6 +93,17 @@ class AudioRouterTests(unittest.TestCase):
         with self.assertRaisesRegex(AudioError, "already active"):
             self.router.start("speaker", "mic")
 
+    def test_stop_does_not_unload_reused_ids_after_audio_server_restart(self):
+        self.router.start("speaker", "mic")
+        self.pactl.capture_present = False
+        self.pactl.calls.clear()
+        self.pactl.sink_inputs[0]["sink"] = 1
+
+        self.router.stop()
+
+        self.assertFalse(any(call[0] == "unload-module" for call in self.pactl.calls))
+        self.assertFalse(self.state_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

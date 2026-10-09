@@ -252,6 +252,18 @@ class AudioRouter:
             return
 
         errors: list[str] = []
+        capture: Device | None = None
+        owns_live_devices = False
+        try:
+            sinks = self.pactl.devices("sinks")
+            sources = self.pactl.devices("sources")
+            capture = next((sink for sink in sinks if sink.name == CAPTURE_SINK), None)
+            owns_live_devices = capture is not None or any(
+                source.name in {SYSTEM_SOURCE, MIX_SOURCE} for source in sources
+            )
+        except AudioError as exc:
+            errors.append(str(exc))
+
         try:
             self.pactl.call("set-default-sink", state.previous_default_sink)
         except AudioError as exc:
@@ -259,7 +271,6 @@ class AudioRouter:
 
         # Move every app still using our capture sink. Module loopbacks target other sinks.
         try:
-            capture = next((sink for sink in self.pactl.devices("sinks") if sink.name == CAPTURE_SINK), None)
             if capture is not None:
                 for item in self._sink_inputs():
                     if int(item.get("sink", -1)) == capture.index:
@@ -271,14 +282,15 @@ class AudioRouter:
             errors.append(str(exc))
 
         remaining: list[int] = []
-        for module_id in reversed(state.modules):
-            try:
-                self.pactl.call("unload-module", str(module_id))
-            except AudioError as exc:
-                # A missing module is harmless after an audio-server restart.
-                if "No such entity" not in str(exc):
-                    errors.append(str(exc))
-                    remaining.append(module_id)
+        if owns_live_devices:
+            for module_id in reversed(state.modules):
+                try:
+                    self.pactl.call("unload-module", str(module_id))
+                except AudioError as exc:
+                    # A missing module is harmless after an audio-server restart.
+                    if "No such entity" not in str(exc):
+                        errors.append(str(exc))
+                        remaining.append(module_id)
 
         if remaining:
             state.modules = list(reversed(remaining))
@@ -287,4 +299,3 @@ class AudioRouter:
             self._remove_state()
         if errors:
             raise AudioError("Some audio routes could not be restored: " + "; ".join(errors))
-

@@ -130,8 +130,10 @@ def run_gui() -> int:
                 self.microphones = self.router.microphones()
                 self.output_dropdown.set_model(Gtk.StringList.new([d.description for d in self.outputs]))
                 self.mic_dropdown.set_model(Gtk.StringList.new([d.description for d in self.microphones]))
-                self.output_dropdown.set_selected(_device_by_default(self.outputs, info.get("Default Sink", "")))
-                self.mic_dropdown.set_selected(_device_by_default(self.microphones, info.get("Default Source", "")))
+                selected_output = state.output if state else info.get("Default Sink", "")
+                selected_microphone = state.microphone if state else info.get("Default Source", "")
+                self.output_dropdown.set_selected(_device_by_default(self.outputs, selected_output))
+                self.mic_dropdown.set_selected(_device_by_default(self.microphones, selected_microphone))
                 active = state is not None
                 self.output_dropdown.set_sensitive(not active)
                 self.mic_dropdown.set_sensitive(not active)
@@ -139,6 +141,7 @@ def run_gui() -> int:
                 self.action.set_label("Stop sharing audio" if active else "Start sharing audio")
                 if active:
                     self.status.set_text("Active — system audio is available as “Screen Share Audio”.")
+                    self.mix_switch.set_active(state.mixed)
                     self.action.remove_css_class("suggested-action")
                     self.action.add_css_class("destructive-action")
                 else:
@@ -220,4 +223,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
