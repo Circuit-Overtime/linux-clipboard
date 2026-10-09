@@ -11,7 +11,14 @@ from pathlib import Path
 SITE_URL = "https://packages.elixpo.com/"
 SITEMAP_URL = f"{SITE_URL}sitemap.xml"
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
-PRODUCT_URLS = [f"{SITE_URL}win-dot-panel/", f"{SITE_URL}screenbridge/"]
+PUBLIC_ROUTES = [
+    "win-dot-panel/",
+    "win-dot-panel/docs/",
+    "win-dot-panel/about/",
+    "screenbridge/",
+    "screenbridge/docs/",
+    "screenbridge/about/",
+]
 
 
 class HeadParser(HTMLParser):
@@ -52,11 +59,12 @@ def check_site(site: Path) -> None:
 
     sitemap = ET.parse(site / "sitemap.xml")
     urls = [node.text for node in sitemap.findall(f"{SITEMAP_NS}url/{SITEMAP_NS}loc")]
-    assert urls == [SITE_URL, *PRODUCT_URLS], f"Unexpected sitemap URLs: {urls}"
+    assert urls == [SITE_URL, *(f"{SITE_URL}{route}" for route in PUBLIC_ROUTES)], (
+        f"Unexpected sitemap URLs: {urls}"
+    )
 
     pages = [(site / "index.html", SITE_URL)] + [
-        (site / product / "index.html", f"{SITE_URL}{product}/")
-        for product in ("win-dot-panel", "screenbridge")
+        (site / route / "index.html", f"{SITE_URL}{route}") for route in PUBLIC_ROUTES
     ]
     for path, expected_url in pages:
         head = HeadParser()
@@ -74,6 +82,7 @@ def check_site(site: Path) -> None:
     for name in (
         "favicon.ico",
         "favicon.png",
+        "info.css",
         "og-image.png",
         "install.sh",
         "win-dot-panel/install.sh",
