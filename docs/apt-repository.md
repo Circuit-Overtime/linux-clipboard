@@ -44,7 +44,7 @@ The same source can install `screenbridge`; do not register the repository a sec
 2. Keep the existing `packages` CNAME pointing at `circuit-overtime.github.io` and retain the domain-verification TXT record.
 3. In **Environments → github-pages**, allow stable `v*` tags and the `main` branch. Win Dot Panel tags deploy directly; ScreenBridge dispatches run from `main`.
 4. Keep the existing `APT_SIGNING_KEY` secret in `Circuit-Overtime/linux-clipboard` and maintain an offline backup of its private key.
-5. Add `PACKAGES_DEPLOY_TOKEN` to `Circuit-Overtime/screenbridge`. Use a fine-grained token scoped only to dispatching workflows in `Circuit-Overtime/linux-clipboard`; it does not need the signing key.
+5. Add `PACKAGES_DEPLOY_TOKEN` to the Actions secrets in `Circuit-Overtime/screenbridge`. Create it as a fine-grained token owned by `Circuit-Overtime`, grant access only to `linux-clipboard`, and grant **Contents: Read and write**. GitHub requires that permission for repository-dispatch events. It does not need the signing key.
 6. Run **Deploy packages.elixpo.com** manually once after these changes land. Confirm both package records before announcing the ScreenBridge route.
 
 ## Release process
