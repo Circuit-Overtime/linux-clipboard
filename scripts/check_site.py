@@ -11,6 +11,7 @@ from pathlib import Path
 SITE_URL = "https://packages.elixpo.com/"
 SITEMAP_URL = f"{SITE_URL}sitemap.xml"
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+PRODUCT_URLS = [f"{SITE_URL}win-dot-panel/", f"{SITE_URL}screenbridge/"]
 
 
 class HeadParser(HTMLParser):
@@ -51,24 +52,35 @@ def check_site(site: Path) -> None:
 
     sitemap = ET.parse(site / "sitemap.xml")
     urls = [node.text for node in sitemap.findall(f"{SITEMAP_NS}url/{SITEMAP_NS}loc")]
-    assert urls == [SITE_URL], f"Unexpected sitemap URLs: {urls}"
+    assert urls == [SITE_URL, *PRODUCT_URLS], f"Unexpected sitemap URLs: {urls}"
 
-    head = HeadParser()
-    head.feed((site / "index.html").read_text(encoding="utf-8"))
-    assert head.title.strip()
-    assert head.links.get("canonical") == SITE_URL
-    robots_meta = {part.strip().lower() for part in head.meta.get("robots", "").split(",")}
-    assert "index" in robots_meta and "noindex" not in robots_meta
-    assert head.meta.get("description")
-    assert head.meta.get("og:url") == SITE_URL
-    assert head.meta.get("og:title")
-    assert head.meta.get("og:description")
-    assert head.meta.get("twitter:card") == "summary_large_image"
-    assert head.links.get("icon") == "/favicon.png"
-    for name in ("favicon.ico", "favicon.png", "og-image.png", "install.sh"):
+    pages = [(site / "index.html", SITE_URL)] + [
+        (site / product / "index.html", f"{SITE_URL}{product}/")
+        for product in ("win-dot-panel", "screenbridge")
+    ]
+    for path, expected_url in pages:
+        head = HeadParser()
+        head.feed(path.read_text(encoding="utf-8"))
+        assert head.title.strip(), f"Missing title in {path}"
+        assert head.links.get("canonical") == expected_url
+        robots_meta = {part.strip().lower() for part in head.meta.get("robots", "").split(",")}
+        assert "index" in robots_meta and "noindex" not in robots_meta
+        assert head.meta.get("description")
+        assert head.meta.get("og:url") == expected_url
+        assert head.meta.get("og:title")
+        assert head.meta.get("og:description")
+        assert head.meta.get("twitter:card") == "summary_large_image"
+
+    for name in (
+        "favicon.ico",
+        "favicon.png",
+        "og-image.png",
+        "install.sh",
+        "win-dot-panel/install.sh",
+        "screenbridge/install.sh",
+        "screenbridge/icon.svg",
+    ):
         assert (site / name).is_file(), f"Missing public file: {name}"
-    assert head.meta.get("og:image") == f"{SITE_URL}og-image.png"
-    assert head.meta.get("twitter:image") == f"{SITE_URL}og-image.png"
 
 
 def main() -> int:

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+package="@PACKAGE@"
+display_name="@DISPLAY_NAME@"
 repository_url="https://packages.elixpo.com/apt/"
 key_url="${repository_url}keyring.asc"
 expected_fingerprint="1D7CBFA8E3D9599C7CA03B86EEEA89F4C2DB5DE5"
-keyring_path="/etc/apt/keyrings/win-dot-panel.gpg"
-source_path="/etc/apt/sources.list.d/win-dot-panel.list"
+keyring_path="/etc/apt/keyrings/elixpo-packages.gpg"
+source_path="/etc/apt/sources.list.d/elixpo-packages.list"
+legacy_source_path="/etc/apt/sources.list.d/win-dot-panel.list"
 
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
     green=$'\033[1;32m'
@@ -18,7 +21,7 @@ else
 fi
 
 if ! command -v apt-get >/dev/null 2>&1; then
-    printf 'Win Dot Panel APT installation requires Debian or Ubuntu.\n' >&2
+    printf '%s installation requires Debian or Ubuntu.\n' "$display_name" >&2
     exit 1
 fi
 if ! command -v curl >/dev/null 2>&1; then
@@ -37,10 +40,15 @@ fi
 "${privileged[@]}" apt-get update
 "${privileged[@]}" apt-get install -y --no-install-recommends gnupg
 
-temporary_dir=$(mktemp -d)
-trap 'rm -rf "$temporary_dir"' EXIT
-curl -fsSL "$key_url" -o "$temporary_dir/keyring.asc"
+temporary_dir=$(mktemp -d -t elixpo-packages.XXXXXXXX)
+cleanup() {
+    if [[ "$temporary_dir" == /tmp/elixpo-packages.* && -d "$temporary_dir" ]]; then
+        rm -rf -- "$temporary_dir"
+    fi
+}
+trap cleanup EXIT
 
+curl -fsSL "$key_url" -o "$temporary_dir/keyring.asc"
 fingerprints=$(gpg --batch --show-keys --with-colons "$temporary_dir/keyring.asc" |
     awk -F: '$1 == "fpr" { print $10 }')
 if [[ "$fingerprints" != "$expected_fingerprint" ]]; then
@@ -55,12 +63,20 @@ printf 'deb [signed-by=%s] %s ./\n' "$keyring_path" "$repository_url" |
     "${privileged[@]}" tee "$source_path" >/dev/null
 "${privileged[@]}" chmod 644 "$source_path"
 
+if [[ -f "$legacy_source_path" ]] && grep -Fq "$repository_url" "$legacy_source_path"; then
+    "${privileged[@]}" rm -f "$legacy_source_path"
+fi
+
 "${privileged[@]}" apt-get update
-"${privileged[@]}" apt-get install -y win-dot-panel
-version=$(dpkg-query -W -f='${Version}' win-dot-panel)
-printf '%s✓ Win Dot Panel %s installed — your clipboard, one shortcut away.%s\n' \
-    "$green" "$version" "$reset"
-printf '%sIf clipboard history stays empty, log out and log back in once to activate it.%s\n' \
-    "$soft_green" "$reset"
-printf '%sOn Wayland, open the panel once and approve keyboard and clipboard access.%s\n' \
-    "$soft_green" "$reset"
+"${privileged[@]}" apt-get install -y "$package"
+version=$(dpkg-query -W -f='${Version}' "$package")
+printf '%s✓ %s %s installed.%s\n' "$green" "$display_name" "$version" "$reset"
+
+if [[ "$package" == "win-dot-panel" ]]; then
+    printf '%sSet Super + . to: /usr/bin/win-dot-panel toggle%s\n' "$soft_green" "$reset"
+    printf '%sSet Super + V to: /usr/bin/win-dot-panel toggle-clipboard%s\n' "$soft_green" "$reset"
+    printf '%sOn Wayland, approve keyboard and clipboard access when prompted.%s\n' \
+        "$soft_green" "$reset"
+else
+    printf '%sOpen ScreenBridge from your applications menu.%s\n' "$soft_green" "$reset"
+fi

@@ -29,12 +29,12 @@ Your clipboard history stays on your computer.
 The Debian package is available for Debian 13 and Ubuntu 26.04. Run this once to add the signed APT repository and install Win Dot Panel:
 
 ```bash
-curl -fsSL -o /var/tmp/win-dot-panel-install.sh https://packages.elixpo.com/install.sh && bash /var/tmp/win-dot-panel-install.sh
+curl -fsSL -o /var/tmp/win-dot-panel-install.sh https://packages.elixpo.com/win-dot-panel/install.sh && bash /var/tmp/win-dot-panel-install.sh
 ```
 
 The script checks the APT signing key, adds the repository, and installs the latest stable package. [Manual setup steps](docs/apt-repository.md#manual-setup) are available if you prefer to run each command yourself. If `curl` is missing, install it first with `sudo apt install curl`.
 
-The same quick command is on [packages.elixpo.com](https://packages.elixpo.com/). If you prefer a standalone package, get the latest stable `.deb` from [GitHub Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest). For other Linux distributions, see the [developer guide](docs/development.md).
+The same quick command is on the [Win Dot Panel package page](https://packages.elixpo.com/win-dot-panel/). If you prefer a standalone package, get the latest stable `.deb` from [GitHub Releases](https://github.com/Circuit-Overtime/linux-clipboard/releases/latest). For other Linux distributions, see the [developer guide](docs/development.md).
 
 The installer prints the shortcut commands and adds an app-menu launcher. `/usr/bin/win-dot-panel toggle` opens the panel.
 

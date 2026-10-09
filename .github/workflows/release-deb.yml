@@ -70,54 +70,9 @@ jobs:
     name: Publish package site and APT repository
     if: github.ref_type == 'tag'
     needs: [package, publish]
-    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
-        with:
-          name: validated-debian-package
-          path: dist
-      - name: Verify downloaded package
-        run: cd dist && sha256sum -c SHA256SUMS
-      - name: Prepare product page
-        run: mkdir -p site && cp -R web/. site/
-      - name: Check crawler files
-        run: python3 scripts/check_site.py site
-      - name: Check APT signing configuration
-        env:
-          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-        run: |
-          test -n "$APT_SIGNING_KEY" || {
-            echo 'APT_SIGNING_KEY is required for stable releases' >&2
-            exit 1
-          }
-      - name: Install repository tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev gnupg
-      - name: Build signed repository
-        env:
-          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-        run: |
-          package=(dist/win-dot-panel_*.deb)
-          test -f "${package[0]}"
-          export GNUPGHOME="$RUNNER_TEMP/win-dot-panel-gnupg"
-          mkdir -m 700 "$GNUPGHOME"
-          printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
-          bash scripts/build_apt_repo.sh "${package[0]}" site
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          name: github-pages-${{ github.run_attempt }}
-          path: site
-      - id: deploy
-        uses: actions/deploy-pages@v4
-        with:
-          artifact_name: github-pages-${{ github.run_attempt }}
+    uses: ./.github/workflows/deploy-packages.yml
+    secrets: inherit

@@ -3,4 +3,10 @@
   <url>
     <loc>https://packages.elixpo.com/</loc>
   </url>
+  <url>
+    <loc>https://packages.elixpo.com/win-dot-panel/</loc>
+  </url>
+  <url>
+    <loc>https://packages.elixpo.com/screenbridge/</loc>
+  </url>
 </urlset>

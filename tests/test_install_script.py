@@ -6,11 +6,16 @@ from pathlib import Path
 
 import pytest
 
+from scripts.prepare_site import prepare_site
+
 FINGERPRINT = "1D7CBFA8E3D9599C7CA03B86EEEA89F4C2DB5DE5"
 
 
+@pytest.mark.parametrize("package", ["win-dot-panel", "screenbridge"])
 @pytest.mark.parametrize("fingerprint,success", [(FINGERPRINT, True), ("0" * 40, False)])
-def test_install_script_checks_key_before_registering_source(tmp_path, fingerprint, success):
+def test_install_script_checks_key_before_registering_source(
+    tmp_path, package, fingerprint, success
+):
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     scripts = {
@@ -50,7 +55,10 @@ esac
         SOURCE_CAPTURE=str(source),
         FAKE_FINGERPRINT=fingerprint,
     )
-    script = Path(__file__).resolve().parents[1] / "web" / "install.sh"
+    project = Path(__file__).resolve().parents[1]
+    site = tmp_path / "site"
+    prepare_site(project / "web", site)
+    script = site / package / "install.sh"
     result = subprocess.run(
         ["bash", str(script)], env=env, capture_output=True, text=True, check=False
     )
@@ -59,13 +67,27 @@ esac
     assert (source.exists()) == success
     if success:
         assert source.read_text() == (
-            "deb [signed-by=/etc/apt/keyrings/win-dot-panel.gpg] "
+            "deb [signed-by=/etc/apt/keyrings/elixpo-packages.gpg] "
             "https://packages.elixpo.com/apt/ ./\n"
         )
-        assert "apt-get install -y win-dot-panel" in log.read_text()
-        assert "Win Dot Panel 1.0.0-1 installed" in result.stdout
-        assert "your clipboard, one shortcut away" in result.stdout
-        assert "log out and log back in once" in result.stdout
+        assert f"apt-get install -y {package}" in log.read_text()
+        display_name = "Win Dot Panel" if package == "win-dot-panel" else "ScreenBridge"
+        assert f"{display_name} 1.0.0-1 installed" in result.stdout
+        if package == "win-dot-panel":
+            assert "Super + ." in result.stdout
+        else:
+            assert "Open ScreenBridge from your applications menu" in result.stdout
     else:
         assert "fingerprint did not match" in result.stderr
-        assert "apt-get install -y win-dot-panel" not in log.read_text()
+        assert f"apt-get install -y {package}" not in log.read_text()
+
+
+def test_site_preparation_keeps_legacy_installer_route(tmp_path):
+    project = Path(__file__).resolve().parents[1]
+    site = tmp_path / "site"
+
+    prepare_site(project / "web", site)
+
+    assert (site / "install.sh").read_bytes() == (site / "win-dot-panel/install.sh").read_bytes()
+    assert 'package="screenbridge"' in (site / "screenbridge/install.sh").read_text()
+    assert not (site / "install.sh.in").exists()

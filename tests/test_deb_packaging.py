@@ -90,7 +90,7 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     message = subprocess.check_output([str(postinst), "configure"], text=True)
     assert "Super + .  ->  /usr/bin/win-dot-panel toggle" in message
     assert "Super + V  ->  /usr/bin/win-dot-panel toggle-clipboard" in message
-    assert "https://packages.elixpo.com/#shortcuts" in message
+    assert "https://packages.elixpo.com/win-dot-panel/#shortcuts" in message
     assert "Win Dot Panel installed — your clipboard, one shortcut away" in message
     assert "Log out and log back in once to activate clipboard history" in message
     assert "If clipboard history stays empty, log out and log back in once" in message
