@@ -138,7 +138,7 @@ def run_gui() -> int:
                 version=f"{__version__} Aurora",
                 comments="Share computer audio in one click.",
                 license_type=Gtk.License.MIT_X11,
-                website="https://github.com/elixpo/linux_screen_share",
+                website="https://github.com/Circuit-Overtime/screenbridge",
                 website_label="GitHub",
             )
             dialog.present()

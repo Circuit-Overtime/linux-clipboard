@@ -27,4 +27,4 @@ git push origin v1.0.0
 
 GitHub Actions runs the tests, builds the Debian package, creates a checksum, and publishes both versioned and stable download assets. The stable asset is used by `scripts/install-release.sh`.
 
-The default public repository is `elixpo/linux_screen_share`. Set `SCREENBRIDGE_REPOSITORY=owner/repository` when running the installer if the project moves.
+The default public repository is `Circuit-Overtime/screenbridge`. Set `SCREENBRIDGE_REPOSITORY=owner/repository` when running the installer if the project moves.

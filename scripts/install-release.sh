@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repository="${SCREENBRIDGE_REPOSITORY:-elixpo/linux_screen_share}"
+repository="${SCREENBRIDGE_REPOSITORY:-Circuit-Overtime/screenbridge}"
 release_url="https://github.com/$repository/releases/latest/download"
 download_dir="$(mktemp -d -t screenbridge-install.XXXXXXXX)"
 

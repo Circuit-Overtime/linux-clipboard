@@ -16,7 +16,7 @@
   <categories>
     <category>AudioVideo</category>
   </categories>
-  <url type="homepage">https://github.com/elixpo/linux_screen_share</url>
+  <url type="homepage">https://github.com/Circuit-Overtime/screenbridge</url>
   <provides>
     <binary>screenbridge</binary>
   </provides>

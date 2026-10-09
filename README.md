@@ -9,7 +9,7 @@ ScreenBridge keeps sound playing through your speakers or headphones and leaves 
 On Ubuntu, open **Terminal**, paste this command, and press Enter:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elixpo/linux_screen_share/master/scripts/install-release.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Circuit-Overtime/screenbridge/master/scripts/install-release.sh | bash
 ```
 
 When it finishes, open **ScreenBridge** from the applications menu.
