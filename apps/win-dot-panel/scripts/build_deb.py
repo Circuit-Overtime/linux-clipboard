@@ -88,8 +88,8 @@ def _write_copyright(stage: Path, wheel: ZipFile) -> None:
     copyright_file.parent.mkdir(parents=True, exist_ok=True)
     copyright_file.write_text(
         "Upstream-Name: Win Dot Panel\n"
-        "Source: https://github.com/Circuit-Overtime/linux-clipboard\n"
-        "Upstream-Contact: https://github.com/Circuit-Overtime/linux-clipboard/issues\n\n"
+        "Source: https://github.com/elixpo/packages.elixpo/tree/main/apps/win-dot-panel\n"
+        "Upstream-Contact: https://github.com/elixpo/packages.elixpo/issues\n\n"
         "Application code and documentation: MIT License\n\n"
         f"{mit_license.rstrip()}\n\n"
         "Bundled emoji data: Unicode License v3\n\n"

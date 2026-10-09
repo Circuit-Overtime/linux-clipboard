@@ -13,7 +13,8 @@ from urllib.request import Request, urlopen
 
 from win_dot_panel.ipc.client import send_command
 
-RELEASES_URL = "https://api.github.com/repos/Circuit-Overtime/linux-clipboard/releases"
+RELEASES_URL = "https://api.github.com/repos/elixpo/packages.elixpo/releases"
+STABLE_TAG_PREFIX = "win-dot-panel/v"
 PACKAGE_NAME = re.compile(r"win-dot-panel_[^/]+_all\.deb\Z")
 
 
@@ -26,23 +27,22 @@ def _read_url(url: str) -> bytes:
 
 
 def _release(channel: str) -> dict[str, object]:
-    if channel == "stable":
-        release = json.loads(_read_url(f"{RELEASES_URL}/latest"))
-    else:
-        releases = json.loads(_read_url(f"{RELEASES_URL}?per_page=30"))
-        if not isinstance(releases, list):
-            raise ValueError("Invalid GitHub releases response")
-        candidates = [
-            item
-            for item in releases
-            if isinstance(item, dict)
-            and not item.get("draft")
-            and item.get("prerelease")
-            and str(item.get("tag_name", "")).startswith("main-")
-        ]
-        if not candidates:
-            raise ValueError(f"No {channel} release is available")
-        release = max(candidates, key=lambda item: str(item.get("published_at") or ""))
+    releases = json.loads(_read_url(f"{RELEASES_URL}?per_page=100"))
+    if not isinstance(releases, list):
+        raise TypeError("Invalid GitHub releases response")
+    prefix = STABLE_TAG_PREFIX if channel == "stable" else "main-"
+    prerelease = channel != "stable"
+    candidates = [
+        item
+        for item in releases
+        if isinstance(item, dict)
+        and not item.get("draft")
+        and bool(item.get("prerelease")) is prerelease
+        and str(item.get("tag_name", "")).startswith(prefix)
+    ]
+    if not candidates:
+        raise ValueError(f"No {channel} release is available")
+    release = max(candidates, key=lambda item: str(item.get("published_at") or ""))
     if not isinstance(release, dict) or not isinstance(release.get("assets"), list):
         raise TypeError("Invalid GitHub release data")
     return release

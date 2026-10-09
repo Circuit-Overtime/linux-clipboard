@@ -38,11 +38,41 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > releases.json
+          latest_tag() {
+            python3 - "$1" <<'PY'
+          import json
+          import sys
+
+          prefix = sys.argv[1]
+          with open("releases.json", encoding="utf-8") as releases_file:
+              releases = json.load(releases_file)
+          candidates = [
+              release for release in releases
+              if not release["draft"]
+              and not release["prerelease"]
+              and release["tag_name"].startswith(prefix)
+          ]
+          candidates.sort(key=lambda release: release.get("published_at") or "", reverse=True)
+          if candidates:
+              print(candidates[0]["tag_name"])
+          PY
+          }
+
+          clipboard_tag="$(latest_tag 'win-dot-panel/v')"
+          if [[ -z "$clipboard_tag" ]]; then
+            # Supports the first ScreenBridge release during the tag namespace migration.
+            clipboard_tag="$(latest_tag 'v')"
+          fi
+          screenbridge_tag="$(latest_tag 'screenbridge/v')"
+          test -n "$clipboard_tag" || { echo 'No stable Win Dot Panel release found' >&2; exit 1; }
+          test -n "$screenbridge_tag" || { echo 'No stable ScreenBridge release found' >&2; exit 1; }
+
           mkdir -p downloads/win-dot-panel downloads/screenbridge
-          gh release download --repo Circuit-Overtime/linux-clipboard \
+          gh release download "$clipboard_tag" --repo "$GITHUB_REPOSITORY" \
             --pattern 'win-dot-panel_*.deb' --pattern SHA256SUMS \
             --dir downloads/win-dot-panel
-          gh release download --repo Circuit-Overtime/screenbridge \
+          gh release download "$screenbridge_tag" --repo "$GITHUB_REPOSITORY" \
             --pattern 'screenbridge_[0-9]*_all.deb' --pattern SHA256SUMS \
             --dir downloads/screenbridge
 

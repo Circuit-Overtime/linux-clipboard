@@ -5,11 +5,12 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - 'win-dot-panel/v*'
     paths:
-      - 'src/**'
+      - 'apps/win-dot-panel/**'
       - 'scripts/**'
       - 'web/**'
+      - 'packages.toml'
       - 'pyproject.toml'
       - 'LICENSE'
       - 'tests/**'
@@ -53,7 +54,8 @@ jobs:
               --clobber --repo "$GITHUB_REPOSITORY"
           else
             gh release create "${{ needs.package.outputs.release_tag }}" dist/win-dot-panel_*.deb dist/SHA256SUMS \
-              --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
+              --verify-tag --generate-notes --title "Win Dot Panel ${GITHUB_REF_NAME#win-dot-panel/v}" \
+              --repo "$GITHUB_REPOSITORY"
           fi
       - name: Publish main prerelease
         if: github.ref_type == 'branch'

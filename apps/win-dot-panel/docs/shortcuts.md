@@ -22,7 +22,7 @@ For a development install inside this repository's `.venv`, find the executable'
 readlink -f "$(command -v win-dot-panel)"
 ```
 
-Add ` toggle` to the printed path. For example, enter `/home/you/linux-clipboard/.venv/bin/win-dot-panel toggle` in the shortcut editor. Use the actual printed path; desktop shortcut launchers may not have the PATH from your activated terminal.
+Add ` toggle` to the printed path. For example, enter `/home/you/packages.elixpo/apps/win-dot-panel/.venv/bin/win-dot-panel toggle` in the shortcut editor. Use the actual printed path; desktop shortcut launchers may not have the PATH from your activated terminal.
 
 ## GNOME
 

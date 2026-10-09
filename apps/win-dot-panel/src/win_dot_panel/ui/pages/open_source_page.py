@@ -6,7 +6,8 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFrame, QLabel, QPushButton, QVBoxLayout, QWidget
 
-REPOSITORY_URL = "https://github.com/Circuit-Overtime/linux-clipboard"
+REPOSITORY_URL = "https://github.com/elixpo/packages.elixpo"
+DOCUMENTATION_URL = f"{REPOSITORY_URL}/tree/main/apps/win-dot-panel/docs"
 
 
 class OpenSourcePage(QWidget):
@@ -35,7 +36,7 @@ class OpenSourcePage(QWidget):
 
         self.star_button = self._action("☆  Star the repository  ↗", REPOSITORY_URL)
         self.issues_button = self._action("↗  Open issues", f"{REPOSITORY_URL}/issues")
-        self.docs_button = self._action("▤  Read the docs", f"{REPOSITORY_URL}/tree/main/docs")
+        self.docs_button = self._action("▤  Read the docs", DOCUMENTATION_URL)
         for button in (self.star_button, self.issues_button, self.docs_button):
             card_layout.addWidget(button)
 

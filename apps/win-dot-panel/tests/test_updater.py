@@ -8,6 +8,30 @@ import pytest
 from win_dot_panel import updater
 
 
+def test_stable_release_is_selected_by_product_prefix(monkeypatch):
+    releases = [
+        {
+            "tag_name": "screenbridge/v1.0.0-2",
+            "draft": False,
+            "prerelease": False,
+            "published_at": "2026-10-09T12:00:00Z",
+            "assets": [],
+        },
+        {
+            "tag_name": "win-dot-panel/v1.0.0-10",
+            "draft": False,
+            "prerelease": False,
+            "published_at": "2026-10-09T11:00:00Z",
+            "assets": [],
+        },
+    ]
+    monkeypatch.setattr(
+        updater, "_read_url", lambda _url: __import__("json").dumps(releases).encode()
+    )
+
+    assert updater._release("stable")["tag_name"] == "win-dot-panel/v1.0.0-10"
+
+
 def test_snapshot_checksum_accepts_githubs_renamed_asset():
     package = "win-dot-panel_1.0.0.main.9-1_all.deb"
     digest = "a" * 64

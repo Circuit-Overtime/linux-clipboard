@@ -16,7 +16,7 @@
   <categories>
     <category>AudioVideo</category>
   </categories>
-  <url type="homepage">https://github.com/Circuit-Overtime/screenbridge</url>
+  <url type="homepage">https://github.com/elixpo/packages.elixpo/tree/main/apps/screenbridge</url>
   <provides>
     <binary>screenbridge</binary>
   </provides>

@@ -14,6 +14,9 @@ jobs:
   build:
     name: Build and validate package
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/win-dot-panel
     outputs:
       release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
@@ -27,8 +30,8 @@ jobs:
           version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             revision="${GITHUB_REF_NAME##*-}"
-            if [[ ! "$revision" =~ ^[1-9][0-9]*$ || "$GITHUB_REF_NAME" != "v${version}-${revision}" ]]; then
-              echo "Tag must match v${version}-<positive Debian revision>" >&2
+            if [[ ! "$revision" =~ ^[1-9][0-9]*$ || "$GITHUB_REF_NAME" != "win-dot-panel/v${version}-${revision}" ]]; then
+              echo "Tag must match win-dot-panel/v${version}-<positive Debian revision>" >&2
               exit 1
             fi
             echo "revision=$revision" >> "$GITHUB_OUTPUT"
@@ -78,6 +81,6 @@ jobs:
         with:
           name: validated-debian-package
           path: |
-            dist/win-dot-panel_*.deb
-            dist/SHA256SUMS
+            apps/win-dot-panel/dist/win-dot-panel_*.deb
+            apps/win-dot-panel/dist/SHA256SUMS
           if-no-files-found: error

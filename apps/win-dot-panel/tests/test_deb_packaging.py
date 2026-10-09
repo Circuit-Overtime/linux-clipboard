@@ -13,7 +13,9 @@ def test_deb_contains_launcher_data_and_dependencies(tmp_path):
     if shutil.which("dpkg-deb") is None:
         pytest.skip("dpkg-deb is unavailable")
     wheel = tmp_path / "win_dot_panel-1.0.0-py3-none-any.whl"
-    icon = (Path(__file__).resolve().parents[1] / "web" / "favicon.png").read_bytes()
+    icon = (
+        Path(__file__).resolve().parents[1] / "src" / "win_dot_panel" / "resources" / "icon.png"
+    ).read_bytes()
     with ZipFile(wheel, "w") as archive:
         for name in (
             "win_dot_panel/__init__.py",

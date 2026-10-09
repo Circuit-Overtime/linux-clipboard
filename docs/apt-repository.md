@@ -1,6 +1,6 @@
 # Signed multi-package APT repository
 
-The package catalog is published at `https://packages.elixpo.com/`, with Win Dot Panel at `/win-dot-panel/`, ScreenBridge at `/screenbridge/`, and stable packages at `/apt/`. The deployment workflow downloads the latest verified release from both application repositories, builds one signed APT index, and deploys the site atomically through GitHub Pages. Development builds stay on GitHub Releases.
+The package catalog is published at `https://packages.elixpo.com/`, with Win Dot Panel at `/win-dot-panel/`, ScreenBridge at `/screenbridge/`, and stable packages at `/apt/`. Both applications and their releases live in `elixpo/packages.elixpo`. The deployment workflow selects the latest stable namespaced release for each product, verifies both packages, builds one signed APT index, and deploys the site atomically through GitHub Pages.
 
 ## Quick install
 
@@ -32,26 +32,24 @@ The same source can install `screenbridge`; do not register the repository a sec
 
 ## Publishing architecture
 
-- `Circuit-Overtime/linux-clipboard` owns GitHub Pages, the custom domain, the product-page sources, and `APT_SIGNING_KEY`.
-- Stable package binaries come from the latest GitHub Releases in `linux-clipboard` and `screenbridge`.
+- `elixpo/packages.elixpo` owns both application sources, GitHub Releases, GitHub Pages, the custom domain, and `APT_SIGNING_KEY`.
+- Stable package binaries use product-prefixed tags: `win-dot-panel/v...` and `screenbridge/v...`.
 - `.github/workflows/deploy-packages.yml` verifies both releases, builds the shared index, signs it, and deploys one Pages artifact.
-- ScreenBridge requests a rebuild through a `package-released` repository dispatch after publishing a stable release.
-- The signing key is never shared with an application repository.
+- Each stable product release invokes that shared deployment workflow directly.
 
 ## One-time maintainer setup
 
 1. Keep GitHub Pages on **GitHub Actions** with the custom domain `packages.elixpo.com`.
-2. Keep the existing `packages` CNAME pointing at `circuit-overtime.github.io` and retain the domain-verification TXT record.
-3. In **Environments → github-pages**, allow stable `v*` tags and the `main` branch. Win Dot Panel tags deploy directly; ScreenBridge dispatches run from `main`.
-4. Keep the existing `APT_SIGNING_KEY` secret in `Circuit-Overtime/linux-clipboard` and maintain an offline backup of its private key.
-5. Add `PACKAGES_DEPLOY_TOKEN` to the Actions secrets in `Circuit-Overtime/screenbridge`. Create it as a fine-grained token owned by `Circuit-Overtime`, grant access only to `linux-clipboard`, and grant **Contents: Read and write**. GitHub requires that permission for repository-dispatch events. It does not need the signing key.
-6. Run **Deploy packages.elixpo.com** manually once after these changes land. Confirm both package records before announcing the ScreenBridge route.
+2. Keep the existing `packages` CNAME pointed at the Pages host for the `elixpo` organization and retain the domain-verification TXT record.
+3. In **Environments → github-pages**, allow `win-dot-panel/v*`, `screenbridge/v*`, and the `main` branch.
+4. Keep `APT_SIGNING_KEY` in this repository's Actions secrets and maintain an offline backup of its private key.
+5. Run **Deploy packages.elixpo.com** manually when either package release must be republished without a new tag.
 
 ## Release process
 
-1. Publish application releases with tags matching `v<upstream-version>-<Debian-revision>`.
+1. Publish application releases with tags matching `<product>/v<upstream-version>-<Debian-revision>`.
 2. Let the application workflow upload its versioned `.deb` and `SHA256SUMS`.
-3. The package-site workflow downloads the latest release from both projects, verifies checksums and package identities, then signs and deploys the combined repository.
+3. The package-site workflow downloads the latest release for both products, verifies checksums and package identities, then signs and deploys the combined repository.
 4. Confirm `/win-dot-panel/`, `/screenbridge/`, both installers, `/apt/InRelease`, `/apt/Packages.gz`, and both files under `/apt/pool/`.
 
 The GitHub updater remains available for Win Dot Panel development builds.

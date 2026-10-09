@@ -22,9 +22,9 @@ def test_open_source_tab_links_and_search_visibility(monkeypatch):
     panel.source_page.issues_button.click()
     panel.source_page.docs_button.click()
     assert opened == [
-        "https://github.com/Circuit-Overtime/linux-clipboard",
-        "https://github.com/Circuit-Overtime/linux-clipboard/issues",
-        "https://github.com/Circuit-Overtime/linux-clipboard/tree/main/docs",
+        "https://github.com/elixpo/packages.elixpo",
+        "https://github.com/elixpo/packages.elixpo/issues",
+        "https://github.com/elixpo/packages.elixpo/tree/main/apps/win-dot-panel/docs",
     ]
 
     panel.select_tab(TABS.index("Emoji"), persist=False)
