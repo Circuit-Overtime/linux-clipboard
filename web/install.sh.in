@@ -41,7 +41,7 @@ if ! command -v gpg >/dev/null 2>&1; then
     # A stale repository key can make this first refresh return non-zero. The
     # distribution indexes still refresh, allowing GnuPG to be installed so
     # the verified replacement key can be written before the strict refresh.
-    "${privileged[@]}" apt-get update || true
+    "${privileged[@]}" apt-get update --allow-releaseinfo-change || true
     "${privileged[@]}" apt-get install -y --no-install-recommends gnupg
 fi
 
@@ -72,7 +72,7 @@ if [[ -f "$legacy_source_path" ]] && grep -Fq "$repository_url" "$legacy_source_
     "${privileged[@]}" rm -f "$legacy_source_path"
 fi
 
-"${privileged[@]}" apt-get update
+"${privileged[@]}" apt-get update --allow-releaseinfo-change
 "${privileged[@]}" apt-get install -y "$package"
 version=$(dpkg-query -W -f='${Version}' "$package")
 printf '%s✓ %s %s installed.%s\n' "$green" "$display_name" "$version" "$reset"

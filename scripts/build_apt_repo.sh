@@ -28,8 +28,8 @@ cd "$repository"
 dpkg-scanpackages --multiversion pool /dev/null > Packages
 gzip -n -9 -c Packages > Packages.gz
 apt-ftparchive \
-  -o 'APT::FTPArchive::Release::Origin=Circuit Overtime' \
-  -o 'APT::FTPArchive::Release::Label=Elixpo Linux Packages' \
+  -o 'APT::FTPArchive::Release::Origin=Elixpo' \
+  -o 'APT::FTPArchive::Release::Label=packages.elixpo' \
   -o 'APT::FTPArchive::Release::Suite=stable' \
   -o 'APT::FTPArchive::Release::Codename=stable' \
   -o 'APT::FTPArchive::Release::Description=Signed Linux application packages from Elixpo' \

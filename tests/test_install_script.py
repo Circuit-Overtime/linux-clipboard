@@ -71,6 +71,7 @@ esac
             "https://packages.elixpo.com/apt/ ./\n"
         )
         assert f"apt-get install -y {package}" in log.read_text()
+        assert "apt-get update --allow-releaseinfo-change" in log.read_text()
         display_name = "Win Dot Panel" if package == "win-dot-panel" else "ScreenBridge"
         assert f"{display_name} 1.0.0-1 installed" in result.stdout
         if package == "win-dot-panel":
