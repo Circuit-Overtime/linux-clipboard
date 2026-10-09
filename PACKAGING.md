@@ -27,4 +27,4 @@ git push origin v1.0.0-1
 
 GitHub Actions runs the tests, builds the Debian package, creates checksums, and publishes both versioned and stable download assets. The stable asset is used by `scripts/install-release.sh`. If `PACKAGES_DEPLOY_TOKEN` is configured, the release also requests a deployment of `packages.elixpo.com`.
 
-The default public repository is `Circuit-Overtime/screenbridge`. Set `SCREENBRIDGE_REPOSITORY=owner/repository` when running the installer if the project moves.
+The primary installer is published at `https://packages.elixpo.com/screenbridge/install.sh`. `scripts/install-release.sh` remains a GitHub Releases fallback. The package-site source and APT signing key live in `Circuit-Overtime/linux-clipboard`.
