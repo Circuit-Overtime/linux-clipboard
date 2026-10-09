@@ -5,15 +5,15 @@ This document is for maintainers. The public README intentionally stays non-tech
 ## Build a Debian package
 
 ```bash
-./packaging/build-deb.sh
+./packaging/build-deb.sh --revision 1
 ```
 
-The package is written to `dist/screenbridge_VERSION_all.deb`. The builder validates the desktop and AppStream metadata when their validators are installed.
+The package is written to `dist/screenbridge_VERSION-REVISION_all.deb`. The builder validates the desktop and AppStream metadata when their validators are installed.
 
 ## Test the package locally
 
 ```bash
-sudo apt install ./dist/screenbridge_1.0.0_all.deb
+sudo apt install ./dist/screenbridge_1.0.0-1_all.deb
 ```
 
 ## Publish a release
@@ -21,10 +21,10 @@ sudo apt install ./dist/screenbridge_1.0.0_all.deb
 The release workflow runs for tags beginning with `v`. The tag must match the version in `screenbridge/__init__.py`.
 
 ```bash
-git tag -a v1.0.0 -m "ScreenBridge 1.0 Aurora"
-git push origin v1.0.0
+git tag -a v1.0.0-1 -m "ScreenBridge 1.0 Aurora, Debian revision 1"
+git push origin v1.0.0-1
 ```
 
-GitHub Actions runs the tests, builds the Debian package, creates a checksum, and publishes both versioned and stable download assets. The stable asset is used by `scripts/install-release.sh`.
+GitHub Actions runs the tests, builds the Debian package, creates checksums, and publishes both versioned and stable download assets. The stable asset is used by `scripts/install-release.sh`. If `PACKAGES_DEPLOY_TOKEN` is configured, the release also requests a deployment of `packages.elixpo.com`.
 
 The default public repository is `Circuit-Overtime/screenbridge`. Set `SCREENBRIDGE_REPOSITORY=owner/repository` when running the installer if the project moves.

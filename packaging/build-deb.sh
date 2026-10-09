@@ -2,12 +2,27 @@
 set -euo pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-version="$(sed -n 's/^__version__ = "\([^"]*\)"/\1/p' "$project_dir/screenbridge/__init__.py")"
+upstream_version="$(sed -n 's/^__version__ = "\([^"]*\)"/\1/p' "$project_dir/screenbridge/__init__.py")"
+revision=1
 
-if [[ -z "$version" ]]; then
+if [[ $# -gt 0 ]]; then
+    if [[ "$1" != "--revision" || $# -ne 2 ]]; then
+        echo "Usage: $0 [--revision POSITIVE_INTEGER]" >&2
+        exit 2
+    fi
+    revision="$2"
+fi
+
+if [[ -z "$upstream_version" ]]; then
     echo "Could not read the ScreenBridge version." >&2
     exit 1
 fi
+if [[ ! "$revision" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Debian revision must be a positive integer." >&2
+    exit 2
+fi
+
+version="${upstream_version}-${revision}"
 
 build_dir="$(mktemp -d -t screenbridge-package.XXXXXXXX)"
 cleanup() {
@@ -37,7 +52,7 @@ sed 's|@EXEC@|screenbridge|g' "$project_dir/io.github.screenbridge.app.desktop.i
     > "$package_root/usr/share/applications/io.github.screenbridge.app.desktop"
 install -m 0644 "$project_dir/assets/io.github.screenbridge.app.svg" \
     "$package_root/usr/share/icons/hicolor/scalable/apps/io.github.screenbridge.app.svg"
-sed "s/@VERSION@/$version/g" "$project_dir/packaging/io.github.screenbridge.app.metainfo.xml.in" \
+sed "s/@VERSION@/$upstream_version/g" "$project_dir/packaging/io.github.screenbridge.app.metainfo.xml.in" \
     > "$package_root/usr/share/metainfo/io.github.screenbridge.app.metainfo.xml"
 install -m 0644 "$project_dir/LICENSE" "$package_root/usr/share/doc/screenbridge/copyright"
 
